@@ -23,7 +23,6 @@ urlpatterns = [
 
     path("api/v1/",include("milestone1.enrollment_mobile.urls")),
 
-
     path("api3/v1/",include("milestone1.enrollment_dl.urls")),
     
     path("api4/v1/",include("milestone1.enrollment_biometric.urls")),
@@ -39,6 +38,8 @@ urlpatterns = [
     path("api9/v1/",include("milestone1.abhanumber_recover.urls")),
 
     path("api10/v1/",include("milestone1.abha_delete.urls")),
+
+    path("api11/v1/",include("milestone1.abha_deactivate.urls")),
 
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
 
