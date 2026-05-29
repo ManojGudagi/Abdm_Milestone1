@@ -50,6 +50,13 @@ INSTALLED_APPS = [
     'milestone1.abha_search',
     'milestone1.profile_update',
     'milestone1.abhanumber_recover',
+
+    # ✅ Add Milestone 2 App Here
+    'milestone2.gateway_auth',
+    'milestone2.bridge_update',
+    'milestone2.facility_linkage',
+    'milestone2.bridge_search',
+    'milestone2.gateway_config',
 ]
 
 MIDDLEWARE = [
@@ -160,3 +167,11 @@ STATICFILES_DIRS = []
 # DEFAULT AUTO FIELD
 # ==========================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'django_local_cache',
+    }
+}

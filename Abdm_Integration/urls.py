@@ -41,6 +41,19 @@ urlpatterns = [
 
     path("api11/v1/",include("milestone1.abha_deactivate.urls")),
 
+
+
+
+    path('api_m2/v2/gateway/', include('milestone2.gateway_auth.urls')),
+
+    path('api_m2/v2/bridge/', include('milestone2.bridge_update.urls')),
+
+    path('api_m2/v2/facility/', include('milestone2.facility_linkage.urls')),
+
+    path('api_m2/v2/search/', include('milestone2.bridge_search.urls')),
+
+    path('api_m2/v2/config/', include('milestone2.gateway_config.urls')),
+
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
 
     # ✅ Redoc (optional)
