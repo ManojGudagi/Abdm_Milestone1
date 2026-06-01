@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'milestone2.facility_linkage',
     'milestone2.bridge_search',
     'milestone2.gateway_config',
+    'milestone2.link_token',
+    'milestone2.care_context',
 ]
 
 MIDDLEWARE = [

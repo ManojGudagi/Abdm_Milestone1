@@ -54,6 +54,10 @@ urlpatterns = [
 
     path('api_m2/v2/config/', include('milestone2.gateway_config.urls')),
 
+    path('api_m2/v2/token/', include('milestone2.link_token.urls')),
+
+    path('api_m2/v2/care-context/', include('milestone2.care_context.urls')),
+
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
 
     # ✅ Redoc (optional)
