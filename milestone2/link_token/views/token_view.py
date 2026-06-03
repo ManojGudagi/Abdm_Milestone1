@@ -7,6 +7,7 @@ from milestone2.link_token.services.token_service import generate_link_token_ser
 from milestone2.utils import HasGatewayToken # ✅ The Security Bouncer
 
 class GenerateLinkTokenView(APIView):
+    
     # ✅ Lock the endpoint
     permission_classes = [HasGatewayToken]
 
@@ -23,6 +24,15 @@ class GenerateLinkTokenView(APIView):
         # Extract the HIP ID so we can pass it to the headers in the service
         validated_data = serializer.validated_data
         hip_id = validated_data.pop("hipId")
+
+        # ✅ THE FIX: Clean the data to prevent ABDM server crashes!
+        # If Swagger passed an empty string for abhaNumber, completely remove it from the payload
+        if not validated_data.get("abhaNumber"):
+            validated_data.pop("abhaNumber", None)
+            
+        # If Swagger passed an empty string for abhaAddress, completely remove it from the payload
+        if not validated_data.get("abhaAddress"):
+            validated_data.pop("abhaAddress", None)
 
         # The remaining validated_data exactly matches the required ABDM JSON body
         response_data, status_code = generate_link_token_service(validated_data, hip_id)

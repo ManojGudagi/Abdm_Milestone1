@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABDM Integration Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <header class="bg-blue-900 text-white py-16 shadow-lg">
+        <div class="max-w-6xl mx-auto px-6 text-center">
+            <h1 class="text-4xl font-extrabold tracking-tight mb-4">ABDM Integration Gateway</h1>
+            <p class="text-lg text-blue-200 mb-8">Secure Healthcare API Backend • Milestones 1, 2 & 3</p>
+            <div class="space-x-4">
+                <a href="/swagger/" class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-3 px-6 rounded-lg transition shadow-md">
+                    Explore API via Swagger
+                </a>
+                <a href="/redoc/" class="bg-white hover:bg-gray-100 text-blue-900 font-bold py-3 px-6 rounded-lg transition shadow-md">
+                    View ReDoc Specs
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-16">
+        <h2 class="text-2xl font-bold mb-8 text-center text-gray-700">Project Architecture</h2>
+        
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <a href="/portal/milestone1/" class="block bg-white p-6 rounded-xl shadow border border-gray-100 hover:shadow-xl hover:border-blue-300 transition relative">
+                <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4 text-xl font-bold">M1</div>
+                <h3 class="text-xl font-bold mb-2">ABHA Creation Portal</h3>
+                <p class="text-gray-600 text-sm mb-4">Generate new ABHA cards using Aadhaar and Mobile OTP.</p>
+                <div class="mt-4"><span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Launch Portal &rarr;</span></div>
+            </a>
+
+            <a href="/portal/milestone2/" class="block bg-white p-6 rounded-xl shadow border border-gray-100 hover:shadow-xl hover:border-green-300 transition relative">
+                <div class="h-12 w-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center mb-4 text-xl font-bold">M2</div>
+                <h3 class="text-xl font-bold mb-2">HIP Data Provider</h3>
+                <p class="text-gray-600 text-sm mb-4">Generate Link Tokens and attach medical records to patient profiles.</p>
+                <div class="mt-4"><span class="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full">Launch Portal &rarr;</span></div>
+            </a>
+
+            <a href="/portal/milestone3/" class="block bg-white p-6 rounded-xl shadow border border-gray-100 hover:shadow-xl hover:border-purple-300 transition relative">
+                <div class="h-12 w-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4 text-xl font-bold">M3</div>
+                <h3 class="text-xl font-bold mb-2">HIU Data Consumer</h3>
+                <p class="text-gray-600 text-sm mb-4">Monitor inbound ABDM webhooks for patient record discovery and linking.</p>
+                <div class="mt-4"><span class="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full">Launch Dashboard &rarr;</span></div>
+            </a>
+
+        </div>
+    </main>
+
+    <footer class="text-center py-8 text-gray-400 text-sm">
+        <p>Built with Django & Django REST Framework</p>
+    </footer>
+
+</body>
+</html>

@@ -59,6 +59,11 @@ INSTALLED_APPS = [
     'milestone2.gateway_config',
     'milestone2.link_token',
     'milestone2.care_context',
+    'milestone2.notify_update',
+    'milestone2.sms_notify',
+    'milestone2.hiu_discover',
+    'milestone2.hiu_on_init',
+    'milestone2.hiu_on_confirm',
 ]
 
 MIDDLEWARE = [
@@ -75,16 +80,22 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'Abdm_Integration.urls'
 
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], # Add BASE_DIR / 'templates' if you create project-level templates
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # ✅ Your new templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',        # ✅ Fixes admin.W411
+                'django.contrib.auth.context_processors.auth',       # ✅ Fixes admin.E402
+                'django.contrib.messages.context_processors.messages', # ✅ Fixes admin.E404
             ],
         },
     },

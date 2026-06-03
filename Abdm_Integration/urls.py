@@ -3,6 +3,7 @@ from django.urls import path,include
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from django.views.generic import TemplateView
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -15,6 +16,15 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+
+    path('', TemplateView.as_view(template_name='index.html'), name='home'),
+
+    path('portal/milestone1/', TemplateView.as_view(template_name='milestone1.html'), name='m1-portal'),
+
+    path('portal/milestone2/', TemplateView.as_view(template_name='milestone2.html'), name='m2-portal'),
+    
+    path('portal/milestone3/', TemplateView.as_view(template_name='milestone3.html'), name='m3-portal'),
+
     path('admin/', admin.site.urls),
 
     path('aadhaar/', include('milestone1.enrollment_aadhaar.urls')),
@@ -58,9 +68,20 @@ urlpatterns = [
 
     path('api_m2/v2/care-context/', include('milestone2.care_context.urls')),
 
+    path('api_m2/v2/update/', include('milestone2.notify_update.urls')),
+
+    path('api_m2/v2/sms/', include('milestone2.sms_notify.urls')),
+
+    path('api_m2/v2/hiu/', include('milestone2.hiu_discover.urls')),
+
+    path('api_m2/v3/user-initiated-linking/link/care-context/', include('milestone2.hiu_on_init.urls')),
+    path('api_m2/v3/user-initiated-linking/link/care-context/', include('milestone2.hiu_on_confirm.urls')),
+
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-ui'),
 
     # ✅ Redoc (optional)
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='redoc'),
 
 ]
+
+
