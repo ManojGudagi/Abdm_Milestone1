@@ -3,211 +3,529 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reception Desk - ABHA Creation</title>
+    <title>ABDM Integration - Full Swagger UI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .nav-button.active { border-left-color: #6366f1; background-color: #1e293b; color: #a5b4fc; }
+        .api-step { border-left: 2px solid #e2e8f0; padding-left: 1rem; margin-bottom: 1.5rem; position: relative; }
+        .api-step::before { content: ''; position: absolute; left: -5px; top: 0; width: 8px; height: 8px; border-radius: 50%; background: #6366f1; }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-slate-50 font-sans h-screen flex overflow-hidden text-slate-800">
 
-    <nav class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
-        <div class="font-bold text-xl flex items-center">
-            <span class="bg-white text-blue-900 rounded px-2 py-1 mr-3">🏥</span> City Hospital Desk
+    <aside class="w-80 bg-slate-900 text-white flex flex-col shadow-xl z-20 flex-shrink-0">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="text-xl font-black text-indigo-400"><i class="fa-solid fa-code-branch mr-2"></i>ABDM API Tester</h1>
+            <p class="text-xs text-slate-400 mt-1">Milestone 1 Workflows</p>
         </div>
-        <a href="/" class="text-blue-200 hover:text-white text-sm font-semibold">&larr; Back to Dashboard</a>
-    </nav>
-
-    <div class="flex-grow flex items-center justify-center p-6">
-        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden border border-gray-200">
+        
+        <div class="flex-1 overflow-y-auto py-2">
             
-            <div class="bg-blue-50 border-b border-blue-100 p-6 text-center">
-                <h2 class="text-2xl font-extrabold text-blue-900">Create New Patient ABHA</h2>
-                <p class="text-sm text-gray-500 mt-1">Full Sequence: Gateway Auth &rarr; Aadhaar OTP &rarr; ABHA Creation</p>
+            <div class="mb-1">
+                <button onclick="toggleMenu('menu-session')" class="w-full text-left px-6 py-3 font-bold text-sm bg-slate-800 hover:bg-slate-700 flex justify-between items-center">
+                    System Auth & Certs <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+                <div id="menu-session" class="bg-slate-900">
+                    <button onclick="switchView('view-auth', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Gateway Auth & Cert</button>
+                </div>
             </div>
 
-            <div class="p-8">
-                
-                <div id="statusBox" class="hidden mb-6 p-4 rounded-lg text-sm font-bold text-center"></div>
-
-                <div id="step1">
-                    <div class="text-center mb-4">
-                        <div class="h-16 w-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-2">🔌</div>
-                        <h3 class="font-bold text-gray-700">Step 1: Authenticate Server</h3>
-                        <p class="text-xs text-gray-500">Fetch the Master Gateway Token from ABDM before proceeding.</p>
-                    </div>
-                    <button id="authBtn" onclick="fetchAccessToken()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-bold py-3 px-4 rounded-lg shadow transition text-lg border border-yellow-600">
-                        Generate Access Token
-                    </button>
+            <div class="mb-1">
+                <button onclick="toggleMenu('menu-enrol')" class="w-full text-left px-6 py-3 font-bold text-sm bg-slate-800 hover:bg-slate-700 flex justify-between items-center">
+                    ABHA Enrolments <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+                <div id="menu-enrol" class="bg-slate-900 hidden">
+                    <button onclick="switchView('view-enrol-aadhaar', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Via Aadhaar OTP</button>
+                    <button onclick="switchView('view-enrol-dl', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Via Driving License</button>
+                    <button onclick="switchView('view-enrol-mobile', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Via Mobile</button>
+                    <button onclick="switchView('view-enrol-bio', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Via Biometrics / Face</button>
                 </div>
-
-                <div id="step2" class="hidden">
-                    <div class="flex items-center justify-between mb-4">
-                        <label class="block text-sm font-bold text-gray-700">Step 2: Patient's Aadhaar Number</label>
-                        <span class="text-xs text-green-700 font-bold bg-green-100 border border-green-300 px-2 py-1 rounded shadow-sm">Token Active (20m)</span>
-                    </div>
-                    <input type="text" id="aadhaarInput" placeholder="Enter 12-digit Aadhaar" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-lg tracking-widest text-center mb-4">
-                    <button id="otpBtn" onclick="requestOTP()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">
-                        Send Aadhaar OTP
-                    </button>
-                </div>
-
-                <div id="step3" class="hidden">
-                    <div class="flex items-center justify-between mb-4">
-                        <label class="block text-sm font-bold text-gray-700">Step 3: Enter Mobile OTP</label>
-                        <span class="text-xs text-blue-700 font-bold bg-blue-100 border border-blue-300 px-2 py-1 rounded shadow-sm">OTP Sent!</span>
-                    </div>
-                    <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition text-lg tracking-widest text-center mb-4">
-                    
-                    <div class="flex space-x-3">
-                        <button onclick="resetToStep2()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg transition">Cancel</button>
-                        <button id="verifyBtn" onclick="verifyOTP()" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">Verify OTP & Create ABHA</button>
-                    </div>
-                </div>
-
-                <div id="step4" class="hidden text-center py-6">
-                    <div class="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">✅</div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">ABHA Created Successfully!</h3>
-                    <p class="text-gray-600 mb-6">The patient's digital health account is now active.</p>
-                    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 mb-6">
-                        <p class="text-sm text-gray-500 uppercase tracking-wide font-bold mb-1">ABHA Number</p>
-                        <p id="finalAbhaNumber" class="text-3xl font-mono font-bold text-blue-900">12-3456-7890-1234</p>
-                    </div>
-                    <button onclick="resetToStep2()" class="bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-6 rounded-lg transition border border-blue-300">Register Another Patient</button>
-                </div>
-
             </div>
+
+            <div class="mb-1">
+                <button onclick="toggleMenu('menu-profile')" class="w-full text-left px-6 py-3 font-bold text-sm bg-slate-800 hover:bg-slate-700 flex justify-between items-center">
+                    Login & Profile Manage <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+                <div id="menu-profile" class="bg-slate-900 hidden">
+                    <button onclick="switchView('view-login', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">ABHA Login Flow</button>
+                    <button onclick="switchView('view-profile-get', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Get Profile & Download Card</button>
+                    <button onclick="switchView('view-abha-address', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">ABHA Address Suggestions</button>
+                </div>
+            </div>
+
+            <div class="mb-1">
+                <button onclick="toggleMenu('menu-updates')" class="w-full text-left px-6 py-3 font-bold text-sm bg-slate-800 hover:bg-slate-700 flex justify-between items-center">
+                    Updates & Search <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+                <div id="menu-updates" class="bg-slate-900 hidden">
+                    <button onclick="switchView('view-profile-update', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Update Account & Email</button>
+                    <button onclick="switchView('view-search-recover', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Search & Recover ABHA</button>
+                </div>
+            </div>
+
+            <div class="mb-1">
+                <button onclick="toggleMenu('menu-lifecycle')" class="w-full text-left px-6 py-3 font-bold text-sm bg-slate-800 hover:bg-slate-700 flex justify-between items-center">
+                    Account Lifecycle <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+                <div id="menu-lifecycle" class="bg-slate-900 hidden">
+                    <button onclick="switchView('view-lifecycle', this)" class="nav-button w-full text-left px-8 py-2 text-xs text-slate-300 hover:text-white border-l-4 border-transparent">Deactivate / Delete</button>
+                </div>
+            </div>
+
         </div>
-    </div>
+        
+        <div class="p-4 bg-slate-950 text-xs border-t border-slate-800">
+            <span class="text-slate-500">Active Session Token:</span><br>
+            <span id="token-status" class="text-red-500 font-mono font-bold break-all">None</span>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative bg-slate-100">
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10 border-b border-slate-200">
+            <h2 id="header-title" class="text-xl font-bold text-slate-800">System Authentication</h2>
+            <div class="flex items-center space-x-3">
+                <input type="text" id="xTokenGlobal" placeholder="Global X-Token" class="px-3 py-1 border rounded bg-indigo-50 text-xs font-mono outline-none w-48" title="Used automatically by X-Token endpoints">
+                <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full border border-indigo-200">Sandbox</span>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 flex flex-col xl:flex-row gap-6">
+            
+            <div class="flex-1 max-w-4xl">
+                
+                <div id="view-auth" class="api-view bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Gateway Authentication</h3>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /aadhaar/sessions/</p>
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <input type="text" id="clientId" placeholder="Client ID" class="w-full px-3 py-2 border rounded bg-slate-50 outline-none text-sm">
+                            <input type="password" id="clientSecret" placeholder="Client Secret" class="w-full px-3 py-2 border rounded bg-slate-50 outline-none text-sm">
+                        </div>
+                        <button onclick="runApi('/aadhaar/sessions/', 'POST', {clientId: document.getElementById('clientId').value, clientSecret: document.getElementById('clientSecret').value, grantType: 'client_credentials'}, false, false)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm mb-6">Generate Gateway Token</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">GET /aadhaar/certificate/</p>
+                        <button onclick="runApi('/aadhaar/certificate/', 'GET')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Fetch Public Cert</button>
+                    </div>
+                </div>
+
+                <div id="view-enrol-aadhaar" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Aadhaar Enrolment Flow</h3>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /aadhaar/send-otp/</p>
+                        <input type="text" id="aadhaarId" placeholder="12-digit Aadhaar" class="w-full px-3 py-2 border rounded bg-slate-50 outline-none text-sm tracking-widest mb-2">
+                        <button onclick="runApi('/aadhaar/send-otp/', 'POST', {txnId: '', scope: ['abha-enrol'], loginHint: 'aadhaar', loginId: document.getElementById('aadhaarId').value, otpSystem: 'aadhaar'}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm mb-6">Send Aadhaar OTP</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /aadhaar/verify-otp/ (Verifies & Enrols)</p>
+                        <div class="grid grid-cols-2 gap-4 mb-2">
+                            <input type="text" id="aadhaarOtp" placeholder="OTP (e.g. 111111)" class="w-full px-3 py-2 border rounded bg-slate-50 outline-none text-sm tracking-widest">
+                            <input type="text" id="aadhaarMobile" placeholder="10-digit Mobile" class="w-full px-3 py-2 border rounded bg-slate-50 outline-none text-sm tracking-widest">
+                        </div>
+                        <button onclick="runApi('/aadhaar/verify-otp/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('aadhaarOtp').value, mobile: document.getElementById('aadhaarMobile').value || '9999999999'}, true, false, true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Enrol ABHA</button>
+                    </div>
+                </div>
+
+                <div id="view-enrol-dl" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Driving License Enrolment</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api3/v1/dl/request/otp/</p>
+                        <input type="text" id="dlMobile" placeholder="Mobile Number" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api3/v1/dl/request/otp/', 'POST', {loginId: document.getElementById('dlMobile').value}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Send DL OTP</button>
+                    </div>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api3/v1/dl/verify/otp/</p>
+                        <input type="text" id="dlOtp" placeholder="OTP" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api3/v1/dl/verify/otp/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('dlOtp').value}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Verify DL OTP</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api3/v1/dl/enrol/document/</p>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <input type="text" id="dlDocument" placeholder="Driving License Number" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            <input type="date" id="dlDob" placeholder="DOB" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            <input type="text" id="dlFirstName" placeholder="First Name" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            <input type="text" id="dlLastName" placeholder="Last Name" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            <select id="dlGender" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
+                                <option value="O">Other</option>
+                            </select>
+                            <input type="text" id="dlAddress" placeholder="Full Address" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            <input type="text" id="dlState" placeholder="State (Code)" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            <input type="text" id="dlDistrict" placeholder="District (Code)" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            <input type="text" id="dlPinCode" placeholder="Pin Code" class="col-span-2 w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Front Side Photo (JPG/PNG)</label>
+                                <input type="file" id="dlFrontPhoto" accept="image/*" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Back Side Photo (JPG/PNG)</label>
+                                <input type="file" id="dlBackPhoto" accept="image/*" class="w-full px-3 py-2 border rounded bg-slate-50 text-sm">
+                            </div>
+                        </div>
+                        <button onclick="runDlDocumentEnrol()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Enrol DL Document</button>
+                    </div>
+                </div>
+
+                <div id="view-enrol-mobile" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Mobile Enrolment</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /mobile/login/request/otp/</p>
+                        <input type="text" id="enrolMob" placeholder="Mobile Number" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/mobile/login/request/otp/', 'POST', {mobileNumber: document.getElementById('enrolMob').value}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Send OTP</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api/v1/verify/mobile/otp/</p>
+                        <input type="text" id="enrolMobOtp" placeholder="OTP" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api/v1/verify/mobile/otp/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('enrolMobOtp').value}, true, false, true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Verify</button>
+                    </div>
+                </div>
+
+                <div id="view-enrol-bio" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Biometric / Face Enrolment</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api4/v1/biometric/face/init/</p>
+                        <button onclick="runApi('/api4/v1/biometric/face/init/', 'POST', {}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Init Face Auth (Get QR txnId)</button>
+                    </div>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">GET /api4/v1/biometric/face/status/</p>
+                        <button onclick="runApi('/api4/v1/biometric/face/status/?txnId=' + globalTxnId, 'GET', null, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Poll Status</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api4/v1/biometric/verify/</p>
+                        <textarea id="bioPayload" placeholder="XML Payload" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-xs font-mono"></textarea>
+                        <button onclick="runApi('/api4/v1/biometric/verify/', 'POST', {txnId: globalTxnId, payload: document.getElementById('bioPayload').value}, true, false, true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Verify Biometric</button>
+                    </div>
+                </div>
+
+                <div id="view-login" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">ABHA Login</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api5/v1/profile/login/request/otp/</p>
+                        <input type="text" id="loginId" placeholder="ABHA Address or Number" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api5/v1/profile/login/request/otp/', 'POST', {loginId: document.getElementById('loginId').value}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Request Login OTP</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api5/v1/profile/login/verify/otp/</p>
+                        <input type="text" id="loginOtp" placeholder="OTP" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api5/v1/profile/login/verify/otp/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('loginOtp').value}, true, false, true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Verify & Login (Gets X-Token)</button>
+                    </div>
+                </div>
+
+                <div id="view-profile-get" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Profile & Card (Requires X-Token)</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">GET /aadhaar/get-profile/</p>
+                        <button onclick="runApi('/aadhaar/get-profile/', 'GET', null, true, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Fetch Profile JSON</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">GET /aadhaar/download-abha-card/</p>
+                        <button onclick="runDownloadCard()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm">Decode & Download PDF</button>
+                    </div>
+                </div>
+
+                <div id="view-abha-address" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">ABHA Address Suggestions</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">GET /api2/v1/abha/suggestions/ (Requires X-Token)</p>
+                        <button onclick="runApi('/api2/v1/abha/suggestions/', 'GET', null, true, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Get Suggestions</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api2/v1/abha/create-address/ (Requires X-Token)</p>
+                        <input type="text" id="newAbhaAddress" placeholder="desired.name@sbx" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api2/v1/abha/create-address/', 'POST', {abhaAddress: document.getElementById('newAbhaAddress').value}, true, true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Create Address</button>
+                    </div>
+                </div>
+
+                <div id="view-profile-update" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Update Profile & Email</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api8/v1/profile/account/request/otp/</p>
+                        <button onclick="runApi('/api8/v1/profile/account/request/otp/', 'POST', {}, true, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Request Update OTP</button>
+                    </div>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api8/v1/profile/account/verify/</p>
+                        <input type="text" id="updateOtp" placeholder="OTP" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api8/v1/profile/account/verify/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('updateOtp').value}, true, true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Verify Update</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api8/v1/profile/account/request/emailVerificationLink/</p>
+                        <input type="email" id="updateEmail" placeholder="patient@email.com" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api8/v1/profile/account/request/emailVerificationLink/', 'POST', {email: document.getElementById('updateEmail').value}, true, true)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">Send Email Link</button>
+                    </div>
+                </div>
+
+                <div id="view-search-recover" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Search & Recover ABHA</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api7/v1/profile/account/abha/search/</p>
+                        <input type="text" id="searchHealthId" placeholder="ABHA Number" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api7/v1/profile/account/abha/search/', 'POST', {healthId: document.getElementById('searchHealthId').value}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Search</button>
+                    </div>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api9/v1/recovery/generate-otp/</p>
+                        <input type="text" id="recoverAadhaar" placeholder="12-digit Aadhaar" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm tracking-widest">
+                        <button onclick="runApi('/api9/v1/recovery/generate-otp/', 'POST', {loginId: document.getElementById('recoverAadhaar').value}, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Generate Recovery OTP</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api9/v1/recovery/verify-otp/</p>
+                        <input type="text" id="recoverOtp" placeholder="OTP" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api9/v1/recovery/verify-otp/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('recoverOtp').value}, true, false, true)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">Verify Recovery</button>
+                    </div>
+                </div>
+
+                <div id="view-lifecycle" class="api-view hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold border-b pb-2 mb-4 text-indigo-900">Deactivate / Delete Profile</h3>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api11/v1/deactivate/generate-otp/ (Requires X-Token)</p>
+                        <button onclick="runApi('/api11/v1/deactivate/generate-otp/', 'POST', {}, true, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Generate Deactivate OTP</button>
+                    </div>
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api11/v1/deactivate/verify-otp/</p>
+                        <input type="text" id="deactOtp" placeholder="OTP" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api11/v1/deactivate/verify-otp/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('deactOtp').value}, true, true)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm">Confirm Deactivation</button>
+                    </div>
+                    <hr class="my-6">
+                    <div class="api-step mb-6">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api10/v1/delete/generate-otp/ (Requires X-Token)</p>
+                        <button onclick="runApi('/api10/v1/delete/generate-otp/', 'POST', {}, true, true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">Generate Delete OTP</button>
+                    </div>
+                    <div class="api-step">
+                        <p class="text-xs font-bold text-slate-500 mb-2">POST /api10/v1/delete/verify-otp/</p>
+                        <input type="text" id="deleteOtp" placeholder="OTP" class="w-full px-3 py-2 border rounded bg-slate-50 mb-2 text-sm">
+                        <button onclick="runApi('/api10/v1/delete/verify-otp/', 'POST', {txnId: globalTxnId, otpValue: document.getElementById('deleteOtp').value}, true, true)" class="bg-red-900 hover:bg-red-800 text-white font-bold py-2 px-4 rounded text-sm">Confirm Permanent Deletion</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="w-full xl:w-96 bg-slate-900 rounded-xl shadow-lg flex flex-col overflow-hidden border border-slate-700 flex-shrink-0 h-[800px]">
+                <div class="bg-slate-800 p-4 border-b border-slate-700 flex justify-between items-center">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-widest"><i class="fa-solid fa-terminal mr-2"></i>Response Console</h4>
+                    <button onclick="clearConsole()" class="text-xs text-slate-400 hover:text-white bg-slate-700 px-2 py-1 rounded">Clear</button>
+                </div>
+                <div class="flex-1 p-4 overflow-y-auto" id="console-scroll">
+                    <pre id="console-output" class="text-xs font-mono text-emerald-400 whitespace-pre-wrap break-all"></pre>
+                </div>
+            </div>
+
+        </div>
+    </main>
 
     <script>
-        let currentTxnId = "";
+        // GLOBAL STATE
+        let gatewayToken = "";
+        let globalTxnId = "";
 
-        function showMessage(msg, isError = false) {
-            const box = document.getElementById('statusBox');
-            box.style.display = 'block';
-            box.innerText = msg;
-            box.className = isError 
-                ? 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-100 text-red-700 border border-red-300' 
-                : 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-blue-100 text-blue-700 border border-blue-300';
+        // UI HELPERS
+        function toggleMenu(menuId) { document.getElementById(menuId).classList.toggle('hidden'); }
+        function switchView(viewId, btnElement) {
+            document.querySelectorAll('.api-view').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-button').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.remove('hidden');
+            if (btnElement) btnElement.classList.add('active');
+            document.getElementById('header-title').innerText = btnElement ? btnElement.innerText : 'API Tester';
         }
-
-        // Resets flow to Step 2 assuming Server is still Authenticated
-        function resetToStep2() {
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').style.display = 'block';
-            document.getElementById('step3').style.display = 'none';
-            document.getElementById('step4').style.display = 'none';
-            document.getElementById('aadhaarInput').value = '';
-            document.getElementById('otpInput').value = '';
-            document.getElementById('statusBox').style.display = 'none';
+        function logToConsole(method, url, data, isError = false) {
+            const out = document.getElementById('console-output');
+            const scrollBox = document.getElementById('console-scroll');
+            const time = new Date().toLocaleTimeString();
+            const color = isError ? 'text-red-400' : 'text-emerald-400';
+            let log = `\n<div class="mb-4"><span class="text-slate-500">[${time}]</span> <span class="font-bold text-indigo-300">${method}</span> ${url}\n`;
+            log += `<span class="${color}">${typeof data === 'object' ? JSON.stringify(data, null, 2) : data}</span></div>`;
+            out.innerHTML += log;
+            scrollBox.scrollTop = scrollBox.scrollHeight; 
         }
+        function clearConsole() { document.getElementById('console-output').innerHTML = ""; }
 
-        // --- STEP 1: FETCH GATEWAY ACCESS TOKEN ---
-        async function fetchAccessToken() {
-            const btn = document.getElementById('authBtn');
-            btn.innerHTML = 'Generating...';
-            btn.disabled = true;
-
-            try {
-                // Calls the Master Gateway Auth endpoint we built earlier
-                const response = await fetch('/api_m2/v2/gateway/sessions/', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('statusBox').style.display = 'none';
-                    document.getElementById('step1').style.display = 'none';
-                    document.getElementById('step2').style.display = 'block';
-                } else {
-                    showMessage("Auth Error: " + JSON.stringify(data), true);
-                    btn.innerHTML = 'Generate Access Token';
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                showMessage("Server connection failed.", true);
-                btn.innerHTML = 'Generate Access Token';
-                btn.disabled = false;
-            }
-        }
-
-        // --- STEP 2: REQUEST OTP ---
-        async function requestOTP() {
-            const aadhaar = document.getElementById('aadhaarInput').value;
-            const btn = document.getElementById('otpBtn');
+        // ---- THE MASTER API RUNNER ----
+        async function runApi(url, method, payload = null, requireGateway = true, requireXToken = false, autoCaptureXToken = false) {
             
-            if (aadhaar.length < 12) {
-                showMessage("Please enter a valid 12-digit Aadhaar number.", true);
-                return;
-            }
-
-            btn.innerHTML = 'Communicating with ABDM...';
-            btn.disabled = true;
-            showMessage("Sending request to ABDM Servers...", false);
-
-            try {
-                const response = await fetch('/aadhaar/generateOtp/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ aadhaar: aadhaar })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    currentTxnId = data.txnId; 
-                    document.getElementById('statusBox').style.display = 'none';
-                    document.getElementById('step2').style.display = 'none';
-                    document.getElementById('step3').style.display = 'block';
-                } else {
-                    showMessage("Error from server: " + JSON.stringify(data), true);
-                }
-            } catch (error) {
-                showMessage("Server connection failed.", true);
-            } finally {
-                btn.innerHTML = 'Send Aadhaar OTP';
-                btn.disabled = false;
-            }
-        }
-
-        // --- STEP 3: VERIFY OTP ---
-        async function verifyOTP() {
-            const otp = document.getElementById('otpInput').value;
-            const btn = document.getElementById('verifyBtn');
+            if (requireGateway && !gatewayToken) return logToConsole("ERROR", "Missing Auth", "Please generate Gateway Token in 'System Auth' first.", true);
             
-            if (otp.length < 6) {
-                showMessage("Please enter a valid 6-digit OTP.", true);
-                return;
-            }
+            let xToken = document.getElementById('xTokenGlobal').value;
+            if (requireXToken && !xToken) return logToConsole("ERROR", "Missing X-Token", "This API requires an X-Token. Paste it in the top navbar.", true);
 
-            btn.innerHTML = 'Verifying...';
-            btn.disabled = true;
-            showMessage("Verifying OTP & Generating ABHA Profile...", false);
+            const headers = { 'Content-Type': 'application/json' };
+            if (requireGateway) headers['Authorization'] = 'Bearer ' + gatewayToken;
+            if (requireXToken) headers['X-token'] = xToken;
+
+            const options = { method, headers };
+            if (payload && method !== 'GET') options.body = JSON.stringify(payload);
 
             try {
-                const response = await fetch('/aadhaar/verifyOtp/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ otp: otp, txnId: currentTxnId })
-                });
+                const res = await fetch(url, options);
+                const contentType = res.headers.get("content-type");
+                
+                if (contentType && contentType.includes("application/json")) {
+                    const data = await res.json();
+                    logToConsole(method, url, data, !res.ok);
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('finalAbhaNumber').innerText = data.abhaNumber || "SUCCESS";
-                    document.getElementById('statusBox').style.display = 'none';
-                    document.getElementById('step3').style.display = 'none';
-                    document.getElementById('step4').style.display = 'block';
+                    if (res.ok) {
+                        if (data.accessToken) {
+                            gatewayToken = data.accessToken;
+                            document.getElementById('token-status').innerText = "Active (Bearer JWT)";
+                        }
+                        if (data.txnId) {
+                            globalTxnId = data.txnId;
+                            logToConsole("SYSTEM", "State Updated", `globalTxnId saved: ${globalTxnId}`);
+                        }
+                        if (autoCaptureXToken) {
+                            let extracted = data.tokens?.token || res.headers.get("X-Token");
+                            if (extracted) {
+                                document.getElementById('xTokenGlobal').value = extracted;
+                                logToConsole("SYSTEM", "Auth Success", "X-Token automatically saved to top navbar!");
+                            }
+                        }
+                    }
                 } else {
-                    showMessage("Verification failed: " + JSON.stringify(data), true);
+                    const htmlText = await res.text();
+                    logToConsole("ERROR", "Django HTML Error", `Route failed or crashed: ${htmlText.substring(0, 150)}...`, true);
                 }
-            } catch (error) {
-                showMessage("Server connection failed.", true);
-            } finally {
-                btn.innerHTML = 'Verify OTP & Create ABHA';
-                btn.disabled = false;
+            } catch (err) {
+                logToConsole("ERROR", "Network Request Failed", err.message, true);
             }
         }
+
+        // HELPER: Convert File to Base64 String
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Strip the "data:image/jpeg;base64," part
+                    const encoded = reader.result.toString().replace(/^data:(.*,)?/, '');
+                    resolve(encoded);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // CORRECTED DL DOCUMENT WRAPPER
+        async function runDlDocumentEnrol() {
+
+                const frontInput = document.getElementById('dlFrontPhoto');
+                const backInput = document.getElementById('dlBackPhoto');
+
+                if (!frontInput || !backInput) {
+                    return logToConsole(
+                        "ERROR",
+                        "Input Not Found",
+                        "File input elements not found.",
+                        true
+                    );
+                }
+
+                const frontFile = frontInput.files[0];
+                const backFile = backInput.files[0];
+
+                if (!frontFile || !backFile) {
+                    return logToConsole(
+                        "ERROR",
+                        "Missing Files",
+                        "Please select both Front and Back photos.",
+                        true
+                    );
+                }
+
+                console.log("Front File:", frontFile);
+                console.log("Back File:", backFile);
+                console.log("Front File Type:", typeof frontFile);
+                console.log("Back File Type:", typeof backFile);
+                console.log("Front instanceof File:", frontFile instanceof File);
+                console.log("Back instanceof File:", backFile instanceof File);
+
+                try {
+
+                    logToConsole(
+                        "SYSTEM",
+                        "Processing",
+                        "Converting images to Base64..."
+                    );
+
+                    const frontBase64 = await fileToBase64(frontFile);
+                    const backBase64 = await fileToBase64(backFile);
+
+                    const payload = {
+                        txnId: globalTxnId,
+                        documentId: document.getElementById('dlDocument').value,
+                        firstName: document.getElementById('dlFirstName').value,
+                        middleName: "",
+                        lastName: document.getElementById('dlLastName').value,
+                        dob: document.getElementById('dlDob').value,
+                        gender: document.getElementById('dlGender').value,
+                        address: document.getElementById('dlAddress').value,
+                        state: document.getElementById('dlState').value,
+                        district: document.getElementById('dlDistrict').value,
+                        pinCode: document.getElementById('dlPinCode').value,
+                        frontSidePhoto: frontBase64,
+                        backSidePhoto: backBase64
+                    };
+
+                    runApi(
+                        '/api3/v1/dl/enrol/document/',
+                        'POST',
+                        payload,
+                        true,
+                        false,
+                        true
+                    );
+
+                } catch (err) {
+                    console.error(err);
+
+                    logToConsole(
+                        "ERROR",
+                        "File Processing Failed",
+                        err.message,
+                        true
+                    );
+                }
+            }
+
+        // SPECIAL CASE: PDF Decoder
+        async function runDownloadCard() {
+            const xToken = document.getElementById('xTokenGlobal').value;
+            if (!gatewayToken || !xToken) return logToConsole("ERROR", "Missing Tokens", "Gateway Token and X-Token required.", true);
+
+            try {
+                logToConsole("GET", "/aadhaar/download-abha-card/", "Requesting PDF payload...");
+                const res = await fetch('/aadhaar/download-abha-card/', { method: 'GET', headers: { 'Authorization': 'Bearer ' + gatewayToken, 'X-token': xToken }});
+                
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const data = await res.json();
+                    if (res.ok) {
+                        let b64Data = typeof data === 'string' ? data : (data.abhaCard || data.card || data.data);
+                        if (b64Data) {
+                            const byteCharacters = atob(b64Data);
+                            const byteNumbers = new Array(byteCharacters.length);
+                            for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+                            const blob = new Blob([new Uint8Array(byteNumbers)], {type: 'application/pdf'});
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url; a.download = 'ABHA_Card.pdf'; document.body.appendChild(a); a.click(); a.remove();
+                            logToConsole("SYSTEM", "Success", "PDF successfully decoded and downloaded.");
+                        } else {
+                            logToConsole("ERROR", "Format Error", "Could not find Base64 string in response.", true);
+                        }
+                    } else {
+                        logToConsole("ERROR", "/aadhaar/download-abha-card/", data, true);
+                    }
+                } else {
+                    const htmlText = await res.text();
+                    logToConsole("ERROR", "Django HTML Error", htmlText.substring(0, 150), true);
+                }
+            } catch (err) { logToConsole("ERROR", "Network", err.message, true); }
+        }
+
+        // Initialize First View
+        switchView('view-auth', document.querySelector('.nav-button'));
     </script>
 </body>
 </html>
