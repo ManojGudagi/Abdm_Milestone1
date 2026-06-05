@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}City Hospital Desk{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen flex flex-col relative">
+
+    <nav class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center z-10 relative">
+        <div class="font-bold text-xl flex items-center">
+            <span class="bg-white text-blue-900 rounded px-2 py-1 mr-3">🏥</span> City Hospital Desk
+        </div>
+        <a href="/" class="text-blue-200 hover:text-white text-sm font-semibold">&larr; Back to Dashboard</a>
+    </nav>
+
+    <div class="flex flex-grow overflow-hidden">
+        
+        <main class="flex-grow flex items-center justify-center p-8 bg-gray-50 overflow-y-auto w-full">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+    </div>
+
+</body>
+</html>

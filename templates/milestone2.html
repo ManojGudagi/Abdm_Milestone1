@@ -15,7 +15,7 @@
         </div>
 
         <div class="p-8 space-y-6">
-            <div id="statusBox" class="hidden p-4 rounded-lg text-sm font-bold text-center mb-4"></div>
+            <div id="statusBox" class="hidden p-4 rounded-lg text-sm font-bold text-center mb-4 transition-all"></div>
 
             <div id="step1" class="border border-slate-200 rounded-lg p-5 shadow-sm">
                 <h3 class="font-bold text-lg text-teal-800 mb-3">1. M2 Gateway Session</h3>
@@ -23,16 +23,16 @@
                     <input type="text" id="m2ClientId" placeholder="Client ID" class="w-full px-3 py-2 border rounded">
                     <input type="password" id="m2ClientSecret" placeholder="Client Secret" class="w-full px-3 py-2 border rounded">
                 </div>
-                <button onclick="executeM2Step1()" class="bg-teal-600 text-white font-bold py-2 px-4 rounded w-full">Generate Session</button>
+                <button onclick="executeM2Step1()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded w-full transition">Generate Session</button>
             </div>
 
             <div id="step2" class="step-inactive border border-slate-200 rounded-lg p-5 shadow-sm">
                 <h3 class="font-bold text-lg text-teal-800 mb-3">2. Facility Linkage</h3>
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <input type="text" id="facilityId" placeholder="Facility ID (IN...)" class="w-full px-3 py-2 border rounded">
+                    <input type="text" id="facilityId" placeholder="Facility ID (e.g. IN2810014366)" class="w-full px-3 py-2 border rounded">
                     <input type="text" id="facilityName" placeholder="Facility Name" class="w-full px-3 py-2 border rounded">
                 </div>
-                <button onclick="executeM2Step2()" class="bg-teal-600 text-white font-bold py-2 px-4 rounded w-full">Link Software to Facility</button>
+                <button onclick="executeM2Step2()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded w-full transition">Link Software to Facility</button>
             </div>
 
             <div id="step3" class="step-inactive border border-slate-200 rounded-lg p-5 shadow-sm">
@@ -45,68 +45,187 @@
                     </select>
                     <input type="number" id="yob" placeholder="Year of Birth (YYYY)" class="w-full px-3 py-2 border rounded">
                 </div>
-                <button onclick="executeM2Step3()" class="bg-teal-600 text-white font-bold py-2 px-4 rounded w-full">Generate Link Token</button>
+                <button onclick="executeM2Step3()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded w-full transition">Generate Link Token</button>
             </div>
 
             <div id="step4" class="step-inactive border border-slate-200 rounded-lg p-5 shadow-sm">
                 <h3 class="font-bold text-lg text-teal-800 mb-3">4. Link Care Context</h3>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <input type="text" id="referenceNumber" placeholder="Reference No (e.g. TMH-001)" class="w-full px-3 py-2 border rounded">
-                    <input type="text" id="display" placeholder="Display Text" class="w-full px-3 py-2 border rounded">
+                    <input type="text" id="display" placeholder="Display Text (e.g. OPD Visit)" class="w-full px-3 py-2 border rounded">
                 </div>
-                <button onclick="executeM2Step4()" class="bg-teal-600 text-white font-bold py-2 px-4 rounded w-full">Link to ABHA</button>
+                <button onclick="executeM2Step4()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded w-full transition">Link to ABHA</button>
             </div>
         </div>
     </div>
 
     <script>
-        let m2Token = "", globalHipId = "", globalLinkToken = "", globalAbhaAddress = "";
+        // Global State Variables
+        let m2Token = "";
+        let globalHipId = "";
+        let globalLinkToken = "";
+        let globalAbhaAddress = "";
 
+        // Helper: UI Status Box
         function showMessage(msg, isError = false) {
             const box = document.getElementById('statusBox');
-            box.style.display = 'block'; box.innerText = msg;
-            box.className = isError ? 'p-4 rounded bg-red-100 text-red-700 mb-4' : 'p-4 rounded bg-teal-100 text-teal-800 mb-4';
+            box.style.display = 'block'; 
+            box.innerText = msg;
+            box.className = isError 
+                ? 'p-4 rounded-lg font-bold bg-red-100 text-red-700 mb-4 border border-red-300' 
+                : 'p-4 rounded-lg font-bold bg-teal-100 text-teal-800 mb-4 border border-teal-300';
+            
+            // Scroll to top to ensure user sees the message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Helper: UI Step Advancement
         function activate(step) {
             document.getElementById('step'+step).classList.remove('step-inactive');
             if(step > 1) document.getElementById('step'+(step-1)).classList.add('opacity-50', 'pointer-events-none');
         }
 
+        // ==========================================
+        // STEP 1: GATEWAY AUTH
+        // ==========================================
         async function executeM2Step1() {
-            const payload = { clientId: document.getElementById('m2ClientId').value, clientSecret: document.getElementById('m2ClientSecret').value, grantType: "client_credentials" };
-            const res = await fetch('/api_m2/v2/gateway/sessions/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (res.ok) { const data = await res.json(); m2Token = data.accessToken; activate(2); showMessage("Session Generated"); }
-        }
-
-        async function executeM2Step2() {
-            globalHipId = document.getElementById('facilityId').value;
-            const payload = { facilityId: globalHipId, facilityName: document.getElementById('facilityName').value, HRP: [{bridgeId: "YOUR_BRIDGE_ID", hipName: "Hospital", type: "HIP", active: true}] };
-            const res = await fetch('/api_m2/v2/facility/link-software/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + m2Token }, body: JSON.stringify(payload) });
-            if (res.ok) { activate(3); showMessage("Facility Linked"); }
-        }
-
-        async function executeM2Step3() {
-            globalAbhaAddress = document.getElementById('abhaAddress').value;
-            const payload = { hipId: globalHipId, abhaAddress: globalAbhaAddress, name: document.getElementById('patientName').value, gender: document.getElementById('gender').value, yearOfBirth: parseInt(document.getElementById('yob').value) };
-            const res = await fetch('/api_m2/v2/token/generate/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + m2Token }, body: JSON.stringify(payload) });
-            if (res.ok) { 
-                const data = await res.json(); 
-                globalLinkToken = data.linkToken || "FETCHED_FROM_HEADER_OR_BODY"; // Adjust based on your API response
-                activate(4); showMessage("Token Generated"); 
+            showMessage("Requesting Session...");
+            const payload = { 
+                clientId: document.getElementById('m2ClientId').value, 
+                clientSecret: document.getElementById('m2ClientSecret').value, 
+                grantType: "client_credentials" 
+            };
+            
+            try {
+                const res = await fetch('/api_m2/v2/gateway/sessions/', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                if (res.ok) { 
+                    const data = await res.json(); 
+                    m2Token = data.accessToken; 
+                    activate(2); 
+                    showMessage("✅ Session Generated Successfully!"); 
+                } else {
+                    const errorData = await res.json();
+                    showMessage("❌ Auth Failed: " + JSON.stringify(errorData), true);
+                }
+            } catch (err) {
+                showMessage("❌ Network Error: " + err.message, true);
             }
         }
 
+        // ==========================================
+        // STEP 2: LINK SOFTWARE TO FACILITY
+        // ==========================================
+        async function executeM2Step2() {
+            showMessage("Linking Facility...");
+            globalHipId = document.getElementById('facilityId').value;
+            
+            const payload = { 
+                facilityId: globalHipId, 
+                facilityName: document.getElementById('facilityName').value, 
+                HRP: [{bridgeId: "YOUR_BRIDGE_ID", hipName: "Hospital", type: "HIP", active: true}] 
+            };
+            
+            try {
+                const res = await fetch('/api_m2/v2/facility/link-software/', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + m2Token }, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                if (res.ok) { 
+                    activate(3); 
+                    showMessage("✅ Facility Linked Successfully!"); 
+                } else {
+                    const errorData = await res.json();
+                    showMessage("❌ Facility Link Failed: " + JSON.stringify(errorData), true);
+                }
+            } catch (err) {
+                showMessage("❌ Network Error: " + err.message, true);
+            }
+        }
+
+        // ==========================================
+        // STEP 3: GENERATE LINK TOKEN (WITH FIXES)
+        // ==========================================
+        async function executeM2Step3() {
+            showMessage("Generating Token...");
+            globalAbhaAddress = document.getElementById('abhaAddress').value;
+            
+            // Safely parse the integer. If empty, send null so Django serializer handles it gracefully
+            const yobValue = parseInt(document.getElementById('yob').value);
+            
+            const payload = { 
+                hipId: globalHipId, 
+                abhaAddress: globalAbhaAddress, 
+                name: document.getElementById('patientName').value, 
+                gender: document.getElementById('gender').value, 
+                yearOfBirth: isNaN(yobValue) ? null : yobValue  // 🔥 The Fix
+            };
+            
+            try {
+                const res = await fetch('/api_m2/v2/token/generate/', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + m2Token }, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                if (res.ok) { 
+                    const data = await res.json(); 
+                    globalLinkToken = data.linkToken || "FETCHED_FROM_HEADER_OR_BODY"; // Adjust based on your API response
+                    activate(4); 
+                    showMessage("✅ Token Generated Successfully!"); 
+                } else {
+                    const errorData = await res.json();
+                    console.error("Validation Error Data:", errorData);
+                    showMessage("❌ Token Generation Failed (Validation Error): " + JSON.stringify(errorData), true);
+                }
+            } catch (err) {
+                showMessage("❌ Network Error: " + err.message, true);
+            }
+        }
+
+        // ==========================================
+        // STEP 4: LINK CARE CONTEXT
+        // ==========================================
         async function executeM2Step4() {
+            showMessage("Linking Care Context...");
             const payload = {
-                hipId: globalHipId, linkToken: globalLinkToken, abhaAddress: globalAbhaAddress,
+                hipId: globalHipId, 
+                linkToken: globalLinkToken, 
+                abhaAddress: globalAbhaAddress,
                 patient: [{
-                    referenceNumber: "P-123", display: "Patient Details", hiType: "OPConsultation", count: 1,
-                    careContexts: [{ referenceNumber: document.getElementById('referenceNumber').value, display: document.getElementById('display').value }]
+                    referenceNumber: "P-123", 
+                    display: "Patient Details", 
+                    hiType: "OPConsultation", 
+                    count: 1,
+                    careContexts: [{ 
+                        referenceNumber: document.getElementById('referenceNumber').value, 
+                        display: document.getElementById('display').value 
+                    }]
                 }]
             };
-            const res = await fetch('/api_m2/v2/care-context/link/', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + m2Token }, body: JSON.stringify(payload) });
-            if (res.ok) { showMessage("Care Context Linked Successfully!"); }
+            
+            try {
+                const res = await fetch('/api_m2/v2/care-context/link/', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + m2Token }, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                if (res.ok) { 
+                    showMessage("🎉 Care Context Linked Successfully! You have completed M2."); 
+                } else {
+                    const errorData = await res.json();
+                    showMessage("❌ Link Care Context Failed: " + JSON.stringify(errorData), true);
+                }
+            } catch (err) {
+                showMessage("❌ Network Error: " + err.message, true);
+            }
         }
     </script>
 </body>

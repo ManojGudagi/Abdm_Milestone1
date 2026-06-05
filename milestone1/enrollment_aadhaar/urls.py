@@ -1,6 +1,7 @@
 # milestone1/enrollment_aadhaar/urls.py
 
 from django.urls import path
+from django.views.generic import TemplateView # <-- ADD THIS IMPORT
 from milestone1.enrollment_aadhaar.views.otp_view import AadhaarOtpVerifyView, AadhaarOtpView, SendOtpView
 from milestone1.enrollment_aadhaar.views.auth_view import CertificateView, SessionTokenView
 from milestone1.enrollment_aadhaar.views.encryption_view import EncodeDataView
@@ -8,11 +9,15 @@ from milestone1.enrollment_aadhaar.views.enrol_view import ABHAProfileView, Aadh
 from milestone1.email_verification.views.email_view import SendEmailVerificationView
 
 urlpatterns = [
+    # --- ADD THIS NEW LINE RIGHT HERE ---
+    path('', TemplateView.as_view(template_name='aadhaar_enroll.html'), name='aadhaar-enroll-ui'),
+    
+    # ... Your existing endpoints ...
     # path('generate-otp/', AadhaarOtpView.as_view(), name='generate-otp'),
     path('sessions/', SessionTokenView.as_view(), name='sessions'),
     path('certificate/', CertificateView.as_view(), name='certificate'),
     path('verify-otp/', AadhaarOtpVerifyView.as_view(),name='verify-otp'),
-   # path("encode/", EncodeDataView.as_view(),name="encode-data"),
+    # path("encode/", EncodeDataView.as_view(),name="encode-data"),
     path("send-otp/", SendOtpView.as_view(), name="send-otp"),
     path('enrol/', AadhaarEnrolView.as_view()),
     path('get-profile/',ABHAProfileView.as_view(),name='get-profile'),

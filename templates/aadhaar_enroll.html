@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+
+{% block title %}Aadhaar Enrollment - ABHA{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden border border-gray-200">
+    
+    <div class="bg-blue-50 border-b border-blue-100 p-6 flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-extrabold text-blue-900">Aadhaar Enrollment</h2>
+            <p class="text-sm text-gray-500 mt-1" id="wizardSubtitle">Step 1: Aadhaar Verification</p>
+        </div>
+        <div class="flex space-x-2">
+            <div id="dot1" class="h-3 w-3 bg-blue-600 rounded-full"></div>
+            <div id="dot2" class="h-3 w-3 bg-gray-300 rounded-full"></div>
+            <div id="dot3" class="h-3 w-3 bg-gray-300 rounded-full"></div>
+        </div>
+    </div>
+
+    <div class="p-8">
+        <div id="statusBox" class="hidden mb-6 p-4 rounded-lg text-sm font-bold text-center"></div>
+
+        <div id="wizardStep1" class="block">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Patient's Aadhaar Number</label>
+            <p class="text-xs text-gray-500 mb-4">The number will be securely encrypted using the ABDM certificate before transmission.</p>
+            <input type="text" id="aadhaarInput" placeholder="Enter 12-digit Aadhaar" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-lg tracking-widest text-center mb-6">
+            
+            <div class="flex items-center mb-6 bg-yellow-50 p-3 rounded border border-yellow-200">
+                <input type="checkbox" id="consentCheck" class="h-5 w-5 text-blue-600 rounded mr-3">
+                <label for="consentCheck" class="text-sm text-yellow-800 font-semibold">I confirm patient consent has been acquired to link Aadhaar to ABHA.</label>
+            </div>
+
+            <button id="sendOtpBtn" onclick="sendAadhaarOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">
+                Request OTP
+            </button>
+        </div>
+
+        <div id="wizardStep2" class="hidden">
+            <div class="bg-green-50 border border-green-200 text-green-800 p-3 rounded mb-6 text-sm text-center font-bold">
+                OTP Sent successfully to Aadhaar-linked mobile!
+            </div>
+
+            <label class="block text-sm font-bold text-gray-700 mb-2">Enter 6-Digit OTP</label>
+            <input type="text" id="otpInput" placeholder="Enter OTP" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition text-lg tracking-widest text-center mb-4">
+            
+            <label class="block text-sm font-bold text-gray-700 mb-2 mt-4">Communication Mobile Number</label>
+            <p class="text-xs text-gray-500 mb-2">Required by ABDM to finalize enrollment.</p>
+            <input type="text" id="mobileInput" placeholder="Enter 10-digit Mobile" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition text-lg tracking-widest text-center mb-6">
+
+            <button id="verifyEnrolBtn" onclick="verifyAndEnrol()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">
+                Verify & Complete Enrollment
+            </button>
+        </div>
+
+        <div id="wizardStep3" class="hidden text-center">
+            <div class="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">🎉</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">ABHA Created Successfully!</h3>
+            
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 mt-4">
+                <p class="text-sm text-gray-500 uppercase tracking-wide font-bold mb-1">Generated ABHA Number</p>
+                <p id="finalAbhaNumber" class="text-3xl font-mono font-bold text-blue-900 mb-4">Loading...</p>
+                
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="downloadCard()" class="flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-4 rounded border border-blue-300 transition">
+                        <span class="mr-2">📥</span> Download Card
+                    </button>
+                    <button onclick="verifyEmail()" class="flex items-center justify-center bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold py-2 px-4 rounded border border-purple-300 transition">
+                        <span class="mr-2">✉️</span> Link Email
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="window.location.href='/aadhaar/'" class="text-gray-500 hover:text-blue-600 font-bold underline text-sm transition">Register Another Patient</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let txnId = ""; 
+    let abhaNumber = "";
+    
+    // Grab the token we saved in the previous screen
+    const gatewayToken = sessionStorage.getItem('gatewayAccessToken');
+
+    function showMessage(msg, isError = false) {
+        const box = document.getElementById('statusBox');
+        box.style.display = 'block';
+        box.innerText = msg;
+        box.className = isError 
+            ? 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-100 text-red-700 border border-red-300' 
+            : 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-blue-100 text-blue-700 border border-blue-300';
+    }
+
+    function updateProgress(step) {
+        document.getElementById('dot1').className = step >= 1 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+        document.getElementById('dot2').className = step >= 2 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+        document.getElementById('dot3').className = step >= 3 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+    }
+
+    // --- HITS: /aadhaar/send-otp/ ---
+    async function sendAadhaarOtp() {
+        const aadhaar = document.getElementById('aadhaarInput').value;
+        const consent = document.getElementById('consentCheck').checked;
+
+        if (!consent) {
+            showMessage("You must confirm patient consent.", true);
+            return;
+        }
+
+        const btn = document.getElementById('sendOtpBtn');
+        btn.innerHTML = 'Requesting...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/aadhaar/send-otp/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    // ADDED AUTHORIZATION HEADER HERE
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify({ 
+                    "aadhaar": aadhaar,
+                    // Keeping loginHint/loginId/otpSystem to match ABDM exact payload if your backend passes this directly
+                    "loginHint": "aadhaar",
+                    "loginId": aadhaar,
+                    "otpSystem": "aadhaar"
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                txnId = data.txnId; 
+                document.getElementById('statusBox').style.display = 'none';
+                document.getElementById('wizardStep1').style.display = 'none';
+                document.getElementById('wizardStep2').style.display = 'block';
+                document.getElementById('wizardSubtitle').innerText = "Step 2: OTP Verification";
+                updateProgress(2);
+            } else {
+                showMessage("Error: " + JSON.stringify(data), true);
+            }
+        } catch (error) {
+            showMessage("Failed to connect to server.", true);
+        } finally {
+            btn.innerHTML = 'Request OTP';
+            btn.disabled = false;
+        }
+    }
+
+    // --- HITS: /aadhaar/verify-otp/ AND /aadhaar/enrol/ ---
+    // --- HITS: /aadhaar/verify-otp/ AND /aadhaar/enrol/ ---
+    async function verifyAndEnrol() {
+        const otp = document.getElementById('otpInput').value;
+        const mobile = document.getElementById('mobileInput').value; // We need this variable down below!
+        const btn = document.getElementById('verifyEnrolBtn');
+
+        btn.innerHTML = 'Verifying...';
+        btn.disabled = true;
+
+        try {
+            // STEP A: Verify OTP
+            const verifyRes = await fetch('/aadhaar/verify-otp/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify({ 
+                    "otpValue": otp, 
+                    "txnId": txnId, 
+                    "mobile": mobile 
+                })
+            });
+            
+            const verifyData = await verifyRes.json();
+            
+            if (!verifyRes.ok) {
+                showMessage("OTP Verification Failed: " + JSON.stringify(verifyData), true);
+                btn.innerHTML = 'Verify & Complete Enrollment';
+                btn.disabled = false;
+                return;
+            }
+
+            btn.innerHTML = 'Creating Profile...';
+            const newTxnId = verifyData.txnId || txnId; 
+            
+            // STEP B: Enrol (Create the profile)
+            const enrolRes = await fetch('/aadhaar/enrol/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify({ 
+                    "consent": {
+                        "code": "abha-enrolment",
+                        "version": "1.4"
+                    },
+                    "authData": {
+                        "authMethods": ["otp"],
+                        "otp": {
+                            "txnId": newTxnId,
+                            "otpValue": otp,
+                            "mobile": mobile // <--- THIS IS THE MISSING PIECE!
+                        }
+                    }
+                })
+            });
+
+            const enrolData = await enrolRes.json();
+
+            if (enrolRes.ok) {
+                abhaNumber = enrolData.abhaNumber || enrolData.ABHANumber;
+                document.getElementById('finalAbhaNumber').innerText = abhaNumber;
+                
+                document.getElementById('statusBox').style.display = 'none';
+                document.getElementById('wizardStep2').style.display = 'none';
+                document.getElementById('wizardStep3').style.display = 'block';
+                document.getElementById('wizardSubtitle').innerText = "Step 3: Profile Created";
+                updateProgress(3);
+            } else {
+                showMessage("Enrollment Failed: " + JSON.stringify(enrolData), true);
+                btn.innerHTML = 'Verify & Complete Enrollment';
+                btn.disabled = false;
+            }
+
+        } catch (error) {
+            showMessage("Server connection failed.", true);
+            btn.innerHTML = 'Verify & Complete Enrollment';
+            btn.disabled = false;
+        }
+    }
+
+    // --- HITS: /aadhaar/download-abha-card/ ---
+    async function downloadCard() {
+        try {
+            const response = await fetch('/aadhaar/download-abha-card/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    // ADDED AUTHORIZATION HEADER HERE
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify({ "abhaNumber": abhaNumber }) 
+            });
+            
+            if(response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ABHA_Card_${abhaNumber}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Failed to download card.");
+            }
+        } catch (error) {
+            alert("Server error downloading card.");
+        }
+    }
+
+    // --- HITS: /aadhaar/request/email/verification/ ---
+    async function verifyEmail() {
+        const email = prompt("Enter patient's email address to link:");
+        if(email) {
+            try {
+                const response = await fetch('/aadhaar/request/email/verification/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        // ADDED AUTHORIZATION HEADER HERE
+                        'Authorization': 'Bearer ' + gatewayToken
+                    },
+                    body: JSON.stringify({ "email": email, "abhaNumber": abhaNumber }) 
+                });
+                if(response.ok) {
+                    alert("Verification link sent to " + email);
+                } else {
+                    alert("Failed to send verification email.");
+                }
+            } catch (error) {
+                alert("Server error processing email.");
+            }
+        }
+    }
+</script>
+{% endblock %}

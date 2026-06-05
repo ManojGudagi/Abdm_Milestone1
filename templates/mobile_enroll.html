@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}Mobile Enrollment - ABHA{% endblock %}
+
+{% block content %}
+<style>
+    /* Highlight the Mobile Enrollment sidebar link */
+    a[href="/aadhaar/"] { @apply text-gray-600 bg-transparent font-normal border-l-0 hover:bg-gray-50 hover:text-blue-600; }
+    a[href="/api/v1/"] { @apply block px-3 py-2 bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600 rounded-r; }
+</style>
+
+<div class="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden border border-gray-200">
+    
+    <div class="bg-blue-50 border-b border-blue-100 p-6 flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-extrabold text-blue-900">Mobile Enrollment</h2>
+            <p class="text-sm text-gray-500 mt-1" id="wizardSubtitle">Step 1: Mobile Authentication</p>
+        </div>
+        <div class="flex space-x-2">
+            <div id="dot1" class="h-3 w-3 bg-blue-600 rounded-full"></div>
+            <div id="dot2" class="h-3 w-3 bg-gray-300 rounded-full"></div>
+            <div id="dot3" class="h-3 w-3 bg-gray-300 rounded-full"></div>
+        </div>
+    </div>
+
+    <div class="p-8">
+        <div id="statusBox" class="hidden mb-6 p-4 rounded-lg text-sm font-bold text-center"></div>
+
+        <div id="wizardStep1" class="block">
+            <div class="bg-blue-50 text-blue-800 p-3 rounded mb-6 text-sm border border-blue-200 font-semibold">
+                Note: Creating an ABHA via mobile requires manual entry of all demographic details.
+            </div>
+
+            <label class="block text-sm font-bold text-gray-700 mb-2">Patient's Mobile Number</label>
+            <input type="text" id="mobileInput" placeholder="Enter 10-digit Mobile Number" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-lg tracking-widest text-center mb-6">
+            
+            <div class="flex items-center mb-6 bg-yellow-50 p-3 rounded border border-yellow-200">
+                <input type="checkbox" id="consentCheck" class="h-5 w-5 text-blue-600 rounded mr-3">
+                <label for="consentCheck" class="text-sm text-yellow-800 font-semibold">I confirm patient consent has been acquired to link this Mobile Number to ABHA.</label>
+            </div>
+
+            <button id="sendOtpBtn" onclick="sendMobileOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">
+                Request Mobile OTP
+            </button>
+        </div>
+
+        <div id="wizardStep2" class="hidden">
+            <div class="bg-green-50 border border-green-200 text-green-800 p-3 rounded mb-6 text-sm text-center font-bold">
+                Mobile OTP Sent Successfully!
+            </div>
+
+            <label class="block text-sm font-bold text-gray-700 mb-2">Enter 6-Digit OTP</label>
+            <input type="text" id="otpInput" placeholder="Enter Mobile OTP" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition text-lg tracking-widest text-center mb-6">
+            
+            <hr class="mb-6 border-gray-200">
+            <h4 class="font-bold text-blue-900 mb-4">Patient Demographics</h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">First Name</label>
+                    <input type="text" id="firstNameInput" placeholder="First Name" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Last Name</label>
+                    <input type="text" id="lastNameInput" placeholder="Last Name" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Date of Birth</label>
+                    <input type="date" id="dobInput" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Gender</label>
+                    <select id="genderInput" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">Select</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-700 mb-1">Full Address</label>
+                <input type="text" id="addressInput" placeholder="Street/Locality Address" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none mb-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="text" id="districtInput" placeholder="District" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="stateInput" placeholder="State" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="pinCodeInput" placeholder="Pincode" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+
+            <button id="verifyEnrolBtn" onclick="verifyAndEnrolMobile()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">
+                Verify OTP & Create Profile
+            </button>
+        </div>
+
+        <div id="wizardStep3" class="hidden text-center">
+            <div class="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">🎉</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">ABHA Created Successfully!</h3>
+            
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 mt-4">
+                <p class="text-sm text-gray-500 uppercase tracking-wide font-bold mb-1">Generated ABHA Number</p>
+                <p id="finalAbhaNumber" class="text-3xl font-mono font-bold text-blue-900 mb-4">Loading...</p>
+                
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="downloadCard()" class="flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-4 rounded border border-blue-300 transition">
+                        <span class="mr-2">📥</span> Download Card
+                    </button>
+                    <button onclick="window.location.href='/api/v1/'" class="flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded border border-gray-300 transition">
+                        <span class="mr-2">🔄</span> Reset form
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="window.location.href='/portal/milestone1/'" class="text-gray-500 hover:text-blue-600 font-bold underline text-sm transition">Return to Main Hub</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let txnId = ""; 
+    let abhaNumber = "";
+    
+    // Grab the gateway token
+    const gatewayToken = sessionStorage.getItem('gatewayAccessToken');
+
+    function showMessage(msg, isError = false) {
+        const box = document.getElementById('statusBox');
+        box.style.display = 'block';
+        box.innerText = msg;
+        box.className = isError 
+            ? 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-100 text-red-700 border border-red-300' 
+            : 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-blue-100 text-blue-700 border border-blue-300';
+    }
+
+    function updateProgress(step) {
+        document.getElementById('dot1').className = step >= 1 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+        document.getElementById('dot2').className = step >= 2 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+        document.getElementById('dot3').className = step >= 3 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+    }
+
+    // --- HITS: /api/v1/request/mobile/otp/ ---
+    async function sendMobileOtp() {
+        const mobile = document.getElementById('mobileInput').value;
+        const consent = document.getElementById('consentCheck').checked;
+
+        if (!consent) {
+            showMessage("You must confirm patient consent.", true);
+            return;
+        }
+
+        if (mobile.length !== 10) {
+            showMessage("Please enter a valid 10-digit mobile number.", true);
+            return;
+        }
+
+        const btn = document.getElementById('sendOtpBtn');
+        btn.innerHTML = 'Requesting...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/v1/request/mobile/otp/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify({ 
+                    "mobile": mobile,
+                    "loginId": mobile,
+                    "loginHint": "mobile"
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                txnId = data.txnId; 
+                document.getElementById('statusBox').style.display = 'none';
+                document.getElementById('wizardStep1').style.display = 'none';
+                document.getElementById('wizardStep2').style.display = 'block';
+                document.getElementById('wizardSubtitle').innerText = "Step 2: Profile Details";
+                updateProgress(2);
+            } else {
+                showMessage("Error: " + JSON.stringify(data), true);
+            }
+        } catch (error) {
+            showMessage("Failed to connect to server.", true);
+        } finally {
+            btn.innerHTML = 'Request Mobile OTP';
+            btn.disabled = false;
+        }
+    }
+
+    // --- HITS: /api/v1/verify/mobile/otp/ ---
+    async function verifyAndEnrolMobile() {
+        // Collect all inputs
+        const otp = document.getElementById('otpInput').value;
+        const firstName = document.getElementById('firstNameInput').value;
+        const lastName = document.getElementById('lastNameInput').value;
+        const dob = document.getElementById('dobInput').value; 
+        const gender = document.getElementById('genderInput').value;
+        const address = document.getElementById('addressInput').value;
+        const state = document.getElementById('stateInput').value;
+        const district = document.getElementById('districtInput').value;
+        const pinCode = document.getElementById('pinCodeInput').value;
+
+        const btn = document.getElementById('verifyEnrolBtn');
+
+        // Basic validation
+        if(!otp || !dob || !firstName || !gender) {
+            showMessage("Please provide the OTP and complete all required demographic fields.", true);
+            return;
+        }
+
+        btn.innerHTML = 'Verifying & Creating Profile...';
+        btn.disabled = true;
+
+        try {
+            // STEP B: Verify OTP & Enrol Profile
+            const verifyRes = await fetch('/api/v1/verify/mobile/otp/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify({ 
+                    "otpValue": otp, 
+                    "txnId": txnId,
+                    "firstName": firstName,
+                    "lastName": lastName,
+                    "dob": dob,
+                    "gender": gender,
+                    "address": address,
+                    "state": state,
+                    "district": district,
+                    "pinCode": pinCode,
+                    "consent": {
+                        "code": "abha-enrolment",
+                        "version": "1.4"
+                    }
+                })
+            });
+            
+            const verifyData = await verifyRes.json();
+            
+            if (verifyRes.ok) {
+                abhaNumber = verifyData.abhaNumber || verifyData.ABHANumber;
+                document.getElementById('finalAbhaNumber').innerText = abhaNumber;
+                
+                document.getElementById('statusBox').style.display = 'none';
+                document.getElementById('wizardStep2').style.display = 'none';
+                document.getElementById('wizardStep3').style.display = 'block';
+                document.getElementById('wizardSubtitle').innerText = "Step 3: Profile Created";
+                updateProgress(3);
+            } else {
+                showMessage("Verification Failed: " + JSON.stringify(verifyData), true);
+                btn.innerHTML = 'Verify OTP & Create Profile';
+                btn.disabled = false;
+            }
+
+        } catch (error) {
+            showMessage("Server connection failed.", true);
+            btn.innerHTML = 'Verify OTP & Create Profile';
+            btn.disabled = false;
+        }
+    }
+
+    async function downloadCard() {
+        try {
+            const response = await fetch('/aadhaar/download-abha-card/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify({ "abhaNumber": abhaNumber }) 
+            });
+            
+            if(response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ABHA_Card_${abhaNumber}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Failed to download card.");
+            }
+        } catch (error) {
+            alert("Server error downloading card.");
+        }
+    }
+</script>
+{% endblock %}
