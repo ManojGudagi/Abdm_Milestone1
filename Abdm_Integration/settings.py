@@ -188,3 +188,5 @@ CACHES = {
         'LOCATION': BASE_DIR / 'django_local_cache',
     }
 }
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # Allows up to 50 MB payloads

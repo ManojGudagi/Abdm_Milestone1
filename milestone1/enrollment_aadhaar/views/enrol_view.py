@@ -9,9 +9,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import uuid
 import requests
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from datetime import datetime, timezone
+
 def get_abdm_timestamp():
     # ABDM expects: 2023-05-24T10:50:00.000Z
     return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
@@ -23,7 +22,6 @@ class AadhaarEnrolView(APIView):
         request_body=ABHAEnrolSerializer,
         responses={200: "ABHA Created"}
     )
-
     def post(self, request):
         try:
             auth_header = request.headers.get("Authorization")
@@ -34,8 +32,36 @@ class AadhaarEnrolView(APIView):
                     status=401
                 )
 
-            serializer = ABHAEnrolSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            # We can still run the serializer to validate base schema if you want, 
+            # but we will IGNORE serializer.validated_data because it strips nested JSON.
+            # Instead, we pull safely from the raw request.data
+            raw_data = request.data
+            
+            try:
+                txn_id = raw_data.get('authData', {}).get('otp', {}).get('txnId')
+                otp_value = raw_data.get('authData', {}).get('otp', {}).get('otpValue')
+                mobile = raw_data.get('authData', {}).get('otp', {}).get('mobile')
+                
+                if not all([txn_id, otp_value, mobile]):
+                    return Response({"error": "Malformed payload. Missing txnId, otpValue, or mobile."}, status=400)
+            except AttributeError:
+                return Response({"error": "Invalid JSON structure sent from frontend."}, status=400)
+
+            # Construct the EXACT payload ABDM expects
+            abdm_payload = {
+                "consent": {
+                    "code": "abha-enrollment",
+                    "version": "1.4"
+                },
+                "authData": {
+                    "authMethods": ["otp"],
+                    "otp": {
+                        "txnId": str(txn_id),
+                        "otpValue": str(otp_value),
+                        "mobile": str(mobile)
+                    }
+                }
+            }
 
             # Generate headers internally
             headers = {
@@ -47,9 +73,12 @@ class AadhaarEnrolView(APIView):
 
             url = "https://abhasbx.abdm.gov.in/abha/api/v3/enrollment/enrol/byAadhaar"
 
+            # Print to terminal to absolutely guarantee the data is intact
+            print("OUTGOING TO ABDM:", abdm_payload)
+
             api_response = requests.post(
                 url=url,
-                json=serializer.validated_data,
+                json=abdm_payload,
                 headers=headers
             )
 
@@ -83,7 +112,6 @@ class ABHAProfileView(APIView):
         ],
         responses={200: "Profile Details"}
     )
-
     def get(self, request):
         try:
             # Authorization from header
@@ -156,7 +184,6 @@ class DownloadProfileView(APIView):
         ],
         responses={200: "ABHA Card Downloaded"}
     )
-
     def get(self, request):
         try:
             # Authorization from header

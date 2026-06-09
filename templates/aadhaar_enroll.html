@@ -79,8 +79,9 @@
 <script>
     let txnId = ""; 
     let abhaNumber = "";
+    let xToken = ""; // Store token for downloads later
     
-    // Grab the token we saved in the previous screen
+    // Grab the gateway token
     const gatewayToken = sessionStorage.getItem('gatewayAccessToken');
 
     function showMessage(msg, isError = false) {
@@ -117,12 +118,10 @@
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    // ADDED AUTHORIZATION HEADER HERE
                     'Authorization': 'Bearer ' + gatewayToken
                 },
                 body: JSON.stringify({ 
                     "aadhaar": aadhaar,
-                    // Keeping loginHint/loginId/otpSystem to match ABDM exact payload if your backend passes this directly
                     "loginHint": "aadhaar",
                     "loginId": aadhaar,
                     "otpSystem": "aadhaar"
@@ -150,10 +149,9 @@
     }
 
     // --- HITS: /aadhaar/verify-otp/ AND /aadhaar/enrol/ ---
-    // --- HITS: /aadhaar/verify-otp/ AND /aadhaar/enrol/ ---
     async function verifyAndEnrol() {
         const otp = document.getElementById('otpInput').value;
-        const mobile = document.getElementById('mobileInput').value; // We need this variable down below!
+        const mobile = document.getElementById('mobileInput').value; 
         const btn = document.getElementById('verifyEnrolBtn');
 
         btn.innerHTML = 'Verifying...';
@@ -176,6 +174,37 @@
             
             const verifyData = await verifyRes.json();
             
+            // ========================================================
+            // THE CIRCUIT BREAKER: Stop if the account already exists
+            // ========================================================
+            if (verifyData.message === "This account already exist") {
+                const box = document.getElementById('statusBox');
+                box.style.display = 'block';
+                box.className = 'mb-6 p-5 rounded-lg text-sm text-center bg-yellow-50 text-yellow-800 border border-yellow-300';
+                
+                // Save the token so they can download the card or view profile later
+                if(verifyData.tokens && verifyData.tokens.token) {
+                    xToken = verifyData.tokens.token;
+                    sessionStorage.setItem('xToken', xToken);
+                }
+
+                // Render a special UI box allowing them to view the existing profile
+                box.innerHTML = `
+                    <div class="font-bold text-lg mb-2 text-yellow-900">Account Already Exists!</div>
+                    <p class="mb-4">This patient already has an ABHA profile registered with this Aadhaar. You do not need to enroll them again.</p>
+                    <button onclick="alert('Token Saved! Redirect to Profile view here.')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded shadow transition">
+                        View Existing Profile
+                    </button>
+                `;
+                
+                btn.innerHTML = 'Verify & Complete Enrollment';
+                btn.disabled = false;
+                
+                // CRITICAL: Exit the function so we NEVER hit the /enrol/ API!
+                return; 
+            }
+            // ========================================================
+
             if (!verifyRes.ok) {
                 showMessage("OTP Verification Failed: " + JSON.stringify(verifyData), true);
                 btn.innerHTML = 'Verify & Complete Enrollment';
@@ -195,7 +224,7 @@
                 },
                 body: JSON.stringify({ 
                     "consent": {
-                        "code": "abha-enrolment",
+                        "code": "abha-enrollment",
                         "version": "1.4"
                     },
                     "authData": {
@@ -203,7 +232,7 @@
                         "otp": {
                             "txnId": newTxnId,
                             "otpValue": otp,
-                            "mobile": mobile // <--- THIS IS THE MISSING PIECE!
+                            "mobile": mobile 
                         }
                     }
                 })
@@ -213,6 +242,8 @@
 
             if (enrolRes.ok) {
                 abhaNumber = enrolData.abhaNumber || enrolData.ABHANumber;
+                xToken = enrolData.tokens?.token || enrolData.token || "";
+                
                 document.getElementById('finalAbhaNumber').innerText = abhaNumber;
                 
                 document.getElementById('statusBox').style.display = 'none';
@@ -227,21 +258,21 @@
             }
 
         } catch (error) {
+            console.error(error);
             showMessage("Server connection failed.", true);
             btn.innerHTML = 'Verify & Complete Enrollment';
             btn.disabled = false;
         }
     }
 
-    // --- HITS: /aadhaar/download-abha-card/ ---
     async function downloadCard() {
         try {
             const response = await fetch('/aadhaar/download-abha-card/', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    // ADDED AUTHORIZATION HEADER HERE
-                    'Authorization': 'Bearer ' + gatewayToken
+                    'Authorization': 'Bearer ' + gatewayToken,
+                    'X-token': xToken 
                 },
                 body: JSON.stringify({ "abhaNumber": abhaNumber }) 
             });
@@ -263,7 +294,6 @@
         }
     }
 
-    // --- HITS: /aadhaar/request/email/verification/ ---
     async function verifyEmail() {
         const email = prompt("Enter patient's email address to link:");
         if(email) {
@@ -272,8 +302,8 @@
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        // ADDED AUTHORIZATION HEADER HERE
-                        'Authorization': 'Bearer ' + gatewayToken
+                        'Authorization': 'Bearer ' + gatewayToken,
+                        'X-token': xToken 
                     },
                     body: JSON.stringify({ "email": email, "abhaNumber": abhaNumber }) 
                 });
