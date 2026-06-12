@@ -54,3 +54,9 @@ class LoginVerifyOtpView(APIView):
             return Response(result["data"], status=result["status_code"])
             
         return Response(serializer.errors, status=400)
+    
+
+from django.shortcuts import render
+
+def profile_dashboard(request):
+    return render(request, 'dashboard.html')

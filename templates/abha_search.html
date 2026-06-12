@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+
+{% block title %}ABHA Search Portal{% endblock %}
+
+{% block content %}
+
+<div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-auto overflow-hidden border border-gray-200 mt-10">
+
+```
+<div class="bg-blue-50 border-b border-blue-100 p-6 flex justify-between items-center">
+    <div>
+        <h2 class="text-2xl font-extrabold text-blue-900">ABHA Search</h2>
+        <p class="text-sm text-gray-500 mt-1" id="wizardSubtitle">
+            Step 1: Search Account
+        </p>
+    </div>
+
+    <div class="flex space-x-2">
+        <div id="dot1" class="h-3 w-3 bg-blue-600 rounded-full"></div>
+        <div id="dot2" class="h-3 w-3 bg-gray-300 rounded-full"></div>
+        <div id="dot3" class="h-3 w-3 bg-gray-300 rounded-full"></div>
+    </div>
+</div>
+
+<div class="p-8">
+
+    <div id="statusBox"
+         class="hidden mb-6 p-4 rounded-lg text-sm font-bold text-center">
+    </div>
+
+    <!-- STEP 1 -->
+
+    <div id="step1">
+
+        <div class="mb-5">
+            <label class="block text-sm font-bold text-gray-700 mb-2">
+                Search By
+            </label>
+
+            <select id="searchHint"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300">
+                <option value="mobile">Mobile Number</option>
+                <option value="aadhaar">Aadhaar Number</option>
+            </select>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-bold text-gray-700 mb-2">
+                Mobile / Aadhaar
+            </label>
+
+            <input type="text"
+                   id="loginId"
+                   class="w-full px-4 py-3 rounded-lg border border-gray-300">
+        </div>
+
+        <button onclick="searchAbha()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+            Search ABHA
+        </button>
+
+    </div>
+
+    <!-- STEP 2 -->
+
+    <div id="step2" class="hidden">
+
+        <div class="mb-5">
+            <label class="block text-sm font-bold text-gray-700 mb-2">
+                Select ABHA Address
+            </label>
+
+            <select id="abhaIndex"
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300">
+            </select>
+        </div>
+
+        <button onclick="requestOtp()"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg">
+            Send OTP
+        </button>
+
+    </div>
+
+    <!-- STEP 3 -->
+
+    <div id="step3" class="hidden">
+
+        <div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded mb-4 text-center font-bold">
+            OTP Sent Successfully
+        </div>
+
+        <input type="text"
+               id="otpValue"
+               maxlength="6"
+               placeholder="Enter OTP"
+               class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-4 text-center">
+
+        <button onclick="verifyOtp()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+            Verify OTP
+        </button>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<script>
+
+let searchTxnId = "";
+let otpTxnId = "";
+let otpSystem = "";
+
+const gatewayToken =
+    sessionStorage.getItem("gatewayAccessToken");
+
+function showMessage(msg, error=false){
+
+    const box = document.getElementById("statusBox");
+
+    box.style.display = "block";
+    box.innerHTML = msg;
+
+    box.className = error
+        ? "mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-100 text-red-700"
+        : "mb-6 p-4 rounded-lg text-sm font-bold text-center bg-green-100 text-green-700";
+}
+
+function updateProgress(step){
+
+    document.getElementById("dot1").className =
+        step >= 1
+        ? "h-3 w-3 bg-blue-600 rounded-full"
+        : "h-3 w-3 bg-gray-300 rounded-full";
+
+    document.getElementById("dot2").className =
+        step >= 2
+        ? "h-3 w-3 bg-blue-600 rounded-full"
+        : "h-3 w-3 bg-gray-300 rounded-full";
+
+    document.getElementById("dot3").className =
+        step >= 3
+        ? "h-3 w-3 bg-blue-600 rounded-full"
+        : "h-3 w-3 bg-gray-300 rounded-full";
+}
+
+async function searchAbha(){
+
+    const searchHint =
+        document.getElementById("searchHint").value;
+
+    const loginId =
+        document.getElementById("loginId").value.trim();
+
+    otpSystem =
+        searchHint === "aadhaar"
+        ? "aadhaar"
+        : "abdm";
+
+    const payload = {
+        searchHint,
+        loginId
+    };
+
+    try{
+
+        const response = await fetch(
+            "/profile/account/abha/search/",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":"application/json",
+                    "Authorization":"Bearer " + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        const data = await response.json();
+
+        console.log("Search Response:", data);
+
+        if(response.ok){
+
+            searchTxnId = data.txnId;
+
+            populateResults(data);
+
+            document.getElementById("step1").classList.add("hidden");
+            document.getElementById("step2").classList.remove("hidden");
+
+            updateProgress(2);
+
+        }else{
+            showMessage(JSON.stringify(data), true);
+        }
+
+    }catch(err){
+        console.error(err);
+        showMessage("Search Failed", true);
+    }
+}
+
+function populateResults(data){
+
+    const select =
+        document.getElementById("abhaIndex");
+
+    select.innerHTML = "";
+
+    if(data.abhaAddresses){
+
+        data.abhaAddresses.forEach((item,index)=>{
+
+            select.innerHTML += `
+                <option value="${index+1}">
+                    ${item}
+                </option>
+            `;
+        });
+    }
+}
+
+async function requestOtp(){
+
+    const payload = {
+
+        loginHint: "index",
+
+        loginId:
+            document.getElementById("abhaIndex").value,
+
+        txnId: searchTxnId,
+
+        otpSystem: otpSystem
+    };
+
+    try{
+
+        const response = await fetch(
+            "/profile/search/request/otp/",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "Authorization":"Bearer " + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        const data = await response.json();
+
+        console.log("OTP Response:", data);
+
+        if(response.ok){
+
+            otpTxnId = data.txnId;
+
+            document.getElementById("step2").classList.add("hidden");
+            document.getElementById("step3").classList.remove("hidden");
+
+            updateProgress(3);
+
+        }else{
+            showMessage(JSON.stringify(data), true);
+        }
+
+    }catch(err){
+        console.error(err);
+        showMessage("OTP Request Failed", true);
+    }
+}
+
+async function verifyOtp(){
+
+    const payload = {
+
+        txnId: otpTxnId,
+
+        otpValue:
+            document.getElementById("otpValue").value,
+
+        otpSystem: otpSystem
+    };
+
+    try{
+
+        const response = await fetch(
+            "/profile/search/verify/otp/",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "Authorization":"Bearer " + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        const data = await response.json();
+
+        console.log("Verify Response:", data);
+
+        if(response.ok){
+
+            sessionStorage.setItem(
+                "dashboardData",
+                JSON.stringify(data)
+            );
+
+            showMessage("ABHA Found Successfully");
+
+        }else{
+            showMessage(JSON.stringify(data), true);
+        }
+
+    }catch(err){
+        console.error(err);
+        showMessage("Verification Failed", true);
+    }
+}
+
+</script>
+
+{% endblock %}

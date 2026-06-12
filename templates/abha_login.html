@@ -1,0 +1,561 @@
+{% extends 'base.html' %}
+
+{% block title %}ABHA Login Portal{% endblock %}
+
+{% block content %}
+<style>
+    /* Sidebar highlighting override */
+    a[href="/api5/v1/"] { @apply block px-3 py-2 bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600 rounded-r; }
+</style>
+
+<div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-auto overflow-hidden border border-gray-200 mt-10">
+    
+    <div class="bg-blue-50 border-b border-blue-100 p-6 flex justify-between items-center">
+        <div>
+            <h2 id="pageTitle" class="text-2xl font-extrabold text-blue-900">ABHA Login</h2>
+            <p class="text-sm text-gray-500 mt-1" id="pageSubtitle">Step 1: Identify Account</p>
+        </div>
+        <div id="progressDots" class="flex space-x-2">
+            <div id="dot1" class="h-3 w-3 bg-blue-600 rounded-full"></div>
+            <div id="dot2" class="h-3 w-3 bg-gray-300 rounded-full"></div>
+            <div id="dot3" class="hidden h-3 w-3 bg-gray-300 rounded-full"></div>
+        </div>
+    </div>
+
+    <div class="p-8">
+        
+        <div id="statusBox" class="hidden mb-6 p-4 rounded-lg text-sm font-bold text-center"></div>
+
+        <div id="loginView">
+            
+            <div id="wizardStep1" class="block">
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Select Login Method</label>
+                    <select id="loginMethod" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-lg bg-gray-50 cursor-pointer" onchange="updateInputPlaceholder()">
+                        <option value="abha-number">Login via ABHA Number</option>
+                        <option value="aadhaar">Login via Aadhaar</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label id="loginIdLabel" class="block text-sm font-bold text-gray-700 mb-2">ABHA Number</label>
+                    <input type="text" id="loginIdInput" placeholder="e.g. 91-XXXX-XXXX-XXXX" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-lg tracking-widest text-center">
+                </div>
+
+                <button id="sendOtpBtn" onclick="requestLoginOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">
+                    Request OTP
+                </button>
+
+                <div class="text-center mt-6 border-t pt-4 border-gray-100">
+                    <p class="text-sm text-gray-600">
+                        Don't know your ABHA Number? 
+                        <button onclick="toggleToSearch()" class="text-blue-600 font-bold hover:underline ml-1">
+                            Search for it
+                        </button>
+                    </p>
+                </div>
+            </div>
+
+            <div id="wizardStep2" class="hidden">
+                <div class="bg-green-50 border border-green-200 text-green-800 p-3 rounded mb-6 text-sm text-center font-bold">
+                    OTP Sent Successfully!
+                </div>
+
+                <label class="block text-sm font-bold text-gray-700 mb-2">Enter 6-Digit OTP</label>
+                <input type="text" id="otpInput" placeholder="******" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition text-2xl tracking-[0.5em] text-center font-mono mb-6" maxlength="6">
+                
+                <button id="verifyOtpBtn" onclick="verifyLoginOtp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg">
+                    Verify & Login
+                </button>
+                
+                <button onclick="window.location.reload()" class="w-full mt-3 text-gray-500 hover:text-blue-600 font-bold text-sm transition">
+                    Go Back
+                </button>
+            </div>
+
+            <div id="wizardStep3" class="hidden text-center">
+                <div class="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✅</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Login Successful!</h3>
+                
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6 text-left shadow-sm flex items-center space-x-4">
+                    <img id="profileImage" src="" alt="Profile Photo" class="h-16 w-16 rounded-full border-2 border-blue-500 object-cover hidden bg-white">
+                    <div>
+                        <h4 id="profileName" class="text-lg font-bold text-gray-900">Loading Name...</h4>
+                        <p id="profileAbhaAddress" class="text-sm text-gray-500 font-mono">Loading Address...</p>
+                        <span id="profileStatus" class="mt-1 inline-block px-2 py-1 text-xs font-bold bg-green-200 text-green-800 rounded">ACTIVE</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white border border-gray-200 rounded-lg p-2 mb-6">
+                    <button onclick="goToDashboard()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg flex items-center justify-center">
+                        <span class="mr-2">👤</span> Go to Profile Dashboard
+                    </button>
+                </div>
+                
+                <button onclick="window.location.href='/portal/milestone1/'" class="text-gray-500 hover:text-blue-600 font-bold underline text-sm transition">Return to Main Hub</button>
+            </div>
+        </div>
+
+        <div id="searchView" class="hidden">
+            
+            <div id="searchStep1">
+                <div class="mb-5">
+                    <p class="text-sm text-gray-600 mb-4">
+                        Enter your linked mobile number to find all associated ABHA accounts
+                    </p>
+                    
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Linked Mobile Number</label>
+                    <input type="text" id="searchLoginId" placeholder="Enter 10-digit mobile number" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <button onclick="searchAbha()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+                    Search ABHA
+                </button>
+            </div>
+
+            <div id="searchStep2" class="hidden">
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Select ABHA Address</label>
+                    <select id="abhaIndex" class="w-full px-4 py-3 rounded-lg border border-gray-300"></select>
+                </div>
+
+                <button onclick="requestSearchOtp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg">
+                    Send OTP
+                </button>
+            </div>
+
+            <div id="searchStep3" class="hidden">
+                <div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded mb-4 text-center font-bold">
+                    OTP Sent Successfully
+                </div>
+
+                <input type="text" id="searchOtpValue" maxlength="6" placeholder="Enter OTP" class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-4 text-center font-mono text-2xl tracking-[0.5em]">
+
+                <button onclick="verifySearchOtp()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+                    Verify OTP
+                </button>
+            </div>
+
+            <div id="searchStep4" class="hidden text-center">
+                <div class="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✅</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">ABHA Found & Verified!</h3>
+                <button onclick="goToDashboard()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition text-lg flex items-center justify-center">
+                    <span class="mr-2">👤</span> Continue to Dashboard
+                </button>
+            </div>
+
+            <div class="text-center mt-6 border-t pt-4 border-gray-100" id="backToLoginContainer">
+                <button onclick="toggleToLogin()" class="text-sm text-gray-500 font-bold hover:text-blue-600">
+                    &larr; Back to standard login
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- GLOBAL VARIABLES ---
+    const gatewayToken = sessionStorage.getItem('gatewayAccessToken');
+    
+    // Login Globals
+    let txnId = ""; 
+    let selectedLoginHint = "";
+    
+    // Search Globals
+    let searchTxnId = "";
+    let searchOtpTxnId = "";
+    let searchOtpSystem = "";
+
+    // --- UI UTILITIES ---
+    function showMessage(msg, isError = false) {
+        const box = document.getElementById('statusBox');
+        box.style.display = 'block';
+        box.innerText = msg;
+        box.className = isError 
+            ? 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-100 text-red-700 border border-red-300' 
+            : 'mb-6 p-4 rounded-lg text-sm font-bold text-center bg-blue-100 text-blue-700 border border-blue-300';
+    }
+
+    function updateProgress(step) {
+        document.getElementById('dot1').className = step >= 1 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+        document.getElementById('dot2').className = step >= 2 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+        document.getElementById('dot3').className = step >= 3 ? "h-3 w-3 bg-blue-600 rounded-full" : "h-3 w-3 bg-gray-300 rounded-full";
+    }
+
+    // --- VIEW TOGGLES ---
+    function toggleToSearch() {
+        document.getElementById("loginView").classList.add("hidden");
+        document.getElementById("searchView").classList.remove("hidden");
+        
+        document.getElementById("pageTitle").innerText = "Search ABHA";
+        document.getElementById("pageSubtitle").innerText = "Step 1: Search Account";
+        
+        document.getElementById("dot3").classList.remove("hidden");
+        updateProgress(1);
+        document.getElementById("statusBox").style.display = "none";
+    }
+
+    function toggleToLogin() {
+        document.getElementById("searchView").classList.add("hidden");
+        document.getElementById("loginView").classList.remove("hidden");
+        
+        document.getElementById("pageTitle").innerText = "ABHA Login";
+        document.getElementById("pageSubtitle").innerText = "Step 1: Identify Account";
+        
+        document.getElementById("dot3").classList.add("hidden");
+        updateProgress(1);
+        document.getElementById("statusBox").style.display = "none";
+    }
+
+    // --- SHARED REDIRECT ---
+    function goToDashboard() {
+        window.location.href = '/api5/v1/portal/dashboard/';
+    }
+
+    // ==========================================
+    // =         LOGIN LOGIC (Existing)         =
+    // ==========================================
+    function updateInputPlaceholder() {
+        const method = document.getElementById('loginMethod').value;
+        const label = document.getElementById('loginIdLabel');
+        const input = document.getElementById('loginIdInput');
+        
+        if (method === 'abha-number') {
+            label.innerText = "ABHA Number";
+            input.placeholder = "e.g. 91-XXXX-XXXX-XXXX";
+        } else {
+            label.innerText = "Aadhaar Number";
+            input.placeholder = "Enter 12-digit number";
+        }
+    }
+
+    async function requestLoginOtp() {
+        if (!gatewayToken) {
+            showMessage("Gateway Token is missing! Please authenticate server first.", true);
+            return;
+        }
+
+        selectedLoginHint = document.getElementById('loginMethod').value;
+        const loginId = document.getElementById('loginIdInput').value.trim();
+
+        if (!loginId) {
+            showMessage(`Please enter your ${selectedLoginHint === 'aadhaar' ? 'Aadhaar' : 'ABHA'} number.`, true);
+            return;
+        }
+
+        const btn = document.getElementById('sendOtpBtn');
+        btn.innerHTML = 'Requesting...';
+        btn.disabled = true;
+
+        const otpSystem = (selectedLoginHint === 'aadhaar') ? 'aadhaar' : 'abdm';
+
+        const payload = {
+            "loginHint": selectedLoginHint,
+            "loginId": loginId,
+            "otpSystem": otpSystem
+        };
+
+        try {
+            const response = await fetch('/api5/v1/profile/login/request/otp/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                txnId = data.txnId; 
+                document.getElementById('statusBox').style.display = 'none';
+                document.getElementById('wizardStep1').style.display = 'none';
+                document.getElementById('wizardStep2').style.display = 'block';
+                document.getElementById('pageSubtitle').innerText = "Step 2: Authentication";
+                updateProgress(2);
+            } else {
+                showMessage("Error: " + JSON.stringify(data), true);
+            }
+        } catch (error) {
+            console.error(error);
+            showMessage("Failed to connect to server.", true);
+        } finally {
+            btn.innerHTML = 'Request OTP';
+            btn.disabled = false;
+        }
+    }
+
+    async function verifyLoginOtp() {
+        const otp = document.getElementById('otpInput').value.trim();
+        const btn = document.getElementById('verifyOtpBtn');
+
+        if (!otp || otp.length < 6) {
+            showMessage("Please enter a valid 6-digit OTP.", true);
+            return;
+        }
+
+        btn.innerHTML = 'Verifying...';
+        btn.disabled = true;
+
+        const payload = {
+            "loginHint": selectedLoginHint,
+            "txnId": txnId,
+            "otpValue": otp
+        };
+
+        try {
+            const response = await fetch('/api5/v1/profile/login/verify/otp/', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            
+            console.log("ABDM Response:", data);
+            console.log("Accounts:", data.accounts);
+
+            if (response.ok) {
+                // 1. Save the new X-Token to sessionStorage for future API calls
+                if(data.token) {
+                    sessionStorage.setItem('abhaProfileToken', data.token);
+                }
+
+                // 2. Save the full JSON payload so your Dashboard can access it
+                sessionStorage.setItem('dashboardData', JSON.stringify(data));
+
+                // 👇 ADD THIS LINE to save the transaction ID for the dashboard
+                sessionStorage.setItem('loginTxnId', txnId);
+
+                // 3. Extract Profile Data from the accounts array (FIXED: Added)
+                if (data.accounts && data.accounts.length > 0) {
+
+                    const profile = data.accounts[0];
+
+                    console.log("Profile Object:", profile);
+
+                    document.getElementById('profileName').innerText =
+                        profile.name || "Unknown Name";
+
+                    document.getElementById('profileAbhaAddress').innerText =
+                        profile.preferredAbhaAddress ||
+                        profile.abhaAddress ||
+                        profile.ABHANumber ||
+                        "N/A";
+
+                    document.getElementById('profileStatus').innerText =
+                        profile.status || "ACTIVE";
+
+                    if (profile.profilePhoto) {
+                        const imgEl = document.getElementById('profileImage');
+                        imgEl.src = `data:image/jpeg;base64,${profile.profilePhoto}`;
+                        imgEl.classList.remove('hidden');
+                    }
+                }
+
+                // 4. Show Success Screen
+                document.getElementById('statusBox').style.display = 'none';
+                document.getElementById('wizardStep2').style.display = 'none';
+                document.getElementById('wizardStep3').style.display = 'block';
+                document.getElementById('wizardSubtitle').innerText = "Authenticated";
+                
+            } else {
+                showMessage("Verification Failed: " + JSON.stringify(data), true);
+            }
+        } finally {
+            btn.innerHTML = 'Verify & Login';
+            btn.disabled = false;
+        }
+    } 
+
+    // ==========================================
+    // =           SEARCH ABHA LOGIC            =
+    // ==========================================
+async function searchAbha() {
+        const searchHint = "mobile"; 
+        const loginId = document.getElementById("searchLoginId").value.trim();
+
+        if(!loginId) {
+            showMessage("Please enter a mobile number.", true);
+            return;
+        }
+
+        // Validate exactly 10 digits
+        if (!/^[0-9]{10}$/.test(loginId)) {
+            showMessage("Please enter a valid 10-digit mobile number.", true);
+            return;
+        }
+
+        searchOtpSystem = "abdm"; 
+        const payload = { searchHint: searchHint, loginId: loginId };
+
+        try {
+            const response = await fetch("/api5/v1/profile/account/abha/search/", {
+                method: "POST",
+                headers: {
+                    "Content-Type":"application/json",
+                    "Authorization":"Bearer " + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            console.log("DEBUG - Raw Step 1 Response:", data);
+
+            if(response.ok) {
+                
+                // --- BULLETPROOF EXTRACTION LOGIC ---
+                // 1. Helper function to dig through nested arrays to find the accounts
+                function findAbhaArray(obj) {
+                    if (!obj) return null;
+                    if (obj.ABHA && Array.isArray(obj.ABHA)) return obj.ABHA;
+                    if (obj.accounts && Array.isArray(obj.accounts)) return obj.accounts;
+                    if (Array.isArray(obj)) {
+                        for (let item of obj) {
+                            let found = findAbhaArray(item);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                }
+                
+                // 2. Helper function to find txnId no matter where it is hiding
+                function findTxnId(obj) {
+                    if (!obj) return null;
+                    if (obj.txnId) return obj.txnId;
+                    if (Array.isArray(obj)) {
+                        for (let item of obj) {
+                            let found = findTxnId(item);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                }
+
+                // Apply the extractors
+                const abhaList = findAbhaArray(data) || [];
+                searchTxnId = findTxnId(data) || "";
+                // -------------------------------------
+                
+                if (abhaList.length === 0) {
+                    showMessage("No accounts found linked to this mobile number.", true);
+                    return; 
+                }
+
+                const select = document.getElementById("abhaIndex");
+                select.innerHTML = "";
+                
+                // Populate the dropdown with the accurately extracted data
+                abhaList.forEach((item, index) => {
+                    const val = item.index || (index + 1); 
+                    const name = item.name || "Unknown Name";
+                    const num = item.ABHANumber || item.abhaNumber || "No ABHA Number";
+                    
+                    select.innerHTML += `<option value="${val}">${name} (${num})</option>`;
+                });
+
+                document.getElementById("statusBox").style.display = 'none';
+                document.getElementById("searchStep1").classList.add("hidden");
+                document.getElementById("searchStep2").classList.remove("hidden");
+                document.getElementById("pageSubtitle").innerText = "Step 2: Select Account";
+                updateProgress(2);
+                
+            } else {
+                showMessage(JSON.stringify(data), true);
+            }
+        } catch(err) {
+            console.error(err);
+            showMessage("Search Failed", true);
+        }
+    }
+
+    async function requestSearchOtp() {
+        const payload = {
+            loginHint: "index",
+            loginId: document.getElementById("abhaIndex").value,
+            txnId: searchTxnId,
+            otpSystem: searchOtpSystem
+        };
+
+        try {
+            const response = await fetch("/api5/v1/profile/search/request/otp/", {
+                method: "POST",
+                headers: {
+                    "Content-Type":"application/json",
+                    "Authorization":"Bearer " + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if(response.ok) {
+                searchOtpTxnId = data.txnId;
+                document.getElementById("statusBox").style.display = 'none';
+                document.getElementById("searchStep2").classList.add("hidden");
+                document.getElementById("searchStep3").classList.remove("hidden");
+                document.getElementById("pageSubtitle").innerText = "Step 3: Verify OTP";
+                updateProgress(3);
+            } else {
+                showMessage(JSON.stringify(data), true);
+            }
+        } catch(err) {
+            console.error(err);
+            showMessage("OTP Request Failed", true);
+        }
+    }
+
+    async function verifySearchOtp() {
+        const payload = {
+            txnId: searchOtpTxnId,
+            otpValue: document.getElementById("searchOtpValue").value,
+            otpSystem: searchOtpSystem
+        };
+
+        try {
+            const response = await fetch("/api5/v1/profile/search/verify/otp/", {
+                method: "POST",
+                headers: {
+                    "Content-Type":"application/json",
+                    "Authorization":"Bearer " + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if(response.ok) {
+
+                if(data.token) {
+                    sessionStorage.setItem('abhaProfileToken', data.token);
+                }
+
+                sessionStorage.setItem("dashboardData", JSON.stringify(data));
+
+                // 👇 ADDED: Save the transaction ID (Using searchOtpTxnId for this flow)
+                sessionStorage.setItem('loginTxnId', searchOtpTxnId);
+                
+                document.getElementById("statusBox").style.display = 'none';
+                document.getElementById("searchStep3").classList.add("hidden");
+                document.getElementById("searchStep4").classList.remove("hidden");
+                document.getElementById("backToLoginContainer").classList.add("hidden");
+                document.getElementById("pageSubtitle").innerText = "Search Complete";
+                updateProgress(3);
+                
+                showMessage("ABHA Account Found & Verified!");
+            } else {
+                showMessage(JSON.stringify(data), true);
+            }
+        } catch(err) {
+            console.error(err);
+            showMessage("Verification Failed", true);
+        }
+    }
+</script>
+{% endblock %}

@@ -22,7 +22,7 @@ MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAstWB95C5pHLXiYW59qyO4Xb+59KYVm9Hywbo
     return base64.b64encode(ciphertext).decode('utf-8')
 
 # =========================================================
-# 🔍 SEARCH STEP 1: FIND ABHA ACCOUNTS
+# 🔍 SEARCH STEP 1: FIND ABHA ACCOUNTS (MOBILE ONLY)
 # =========================================================
 def search_abha_service(data, auth_header):
     url = "https://abhasbx.abdm.gov.in/abha/api/v3/profile/account/abha/search"
@@ -32,12 +32,11 @@ def search_abha_service(data, auth_header):
     except Exception as e:
         return {"status_code": 500, "data": {"error": f"Encryption failed: {str(e)}"}}
 
-    # Dynamically build the payload based on what the user is searching with
-    payload = {"scope": ["search-abha"]}
-    if data.get("searchHint") == "mobile":
-        payload["mobile"] = encrypted_id
-    else:
-        payload["aadhaar"] = encrypted_id
+    # ABDM requires this endpoint to strictly use the "mobile" key
+    payload = {
+        "scope": ["search-abha"],
+        "mobile": encrypted_id
+    }
 
     headers = {
         "Content-Type": "application/json",

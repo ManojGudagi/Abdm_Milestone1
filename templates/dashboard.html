@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-3xl mx-auto mt-10">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h1 class="text-white text-xl font-bold flex items-center">
+                    <span class="mr-2">👤</span> My Profile
+                </h1>
+                <button onclick="logout()" class="text-blue-100 hover:text-white text-sm font-bold transition">
+                    Logout
+                </button>
+            </div>
+
+            <div class="p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-8">
+                
+                <div class="flex-shrink-0">
+                    <img id="user-photo" 
+                         class="h-32 w-32 rounded-full border-4 border-gray-100 object-cover shadow-sm" 
+                         src="https://via.placeholder.com/150?text=No+Photo" 
+                         alt="Profile picture">
+                </div>
+
+                <div class="text-center sm:text-left flex-1 w-full mt-2 sm:mt-0">
+                    <h2 id="user-name" class="text-2xl font-bold text-gray-900 mb-1">Loading...</h2>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4 mt-4 border border-gray-100 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center">
+                            <span class="text-sm text-gray-500 w-24 font-bold">ABHA No:</span>
+                            <span id="user-abha" class="font-mono font-medium text-gray-800 bg-white px-2 py-1 rounded border border-gray-200 shadow-sm mt-1 sm:mt-0">...</span>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row sm:items-center">
+                            <span class="text-sm text-gray-500 w-24 font-bold">Address:</span>
+                            <span id="user-address" class="text-gray-800 font-medium mt-1 sm:mt-0">...</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex items-center justify-center sm:justify-start">
+                        <span class="text-sm text-gray-500 mr-3 font-bold">Account Status:</span>
+                        <span id="user-status" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-gray-100 text-gray-800">
+                            ...
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 mt-8">
+            <div class="border-b border-gray-100 p-5 bg-gray-50 rounded-t-xl">
+                <h3 class="text-lg font-bold text-gray-800">Account Management</h3>
+                <p class="text-sm text-gray-500 mt-1">Keep your contact details up to date.</p>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <button onclick="openModal('mobileModal')" class="flex items-center justify-between p-4 border border-blue-200 bg-white hover:bg-blue-50 rounded-lg transition text-left group shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-blue-900 group-hover:text-blue-700">Update Mobile</h4>
+                            <p class="text-xs text-gray-500 mt-1">Link a new mobile number</p>
+                        </div>
+                        <span class="text-blue-500 text-xl font-bold">&rarr;</span>
+                    </button>
+
+                    <button onclick="openModal('emailModal')" class="flex items-center justify-between p-4 border border-green-200 bg-white hover:bg-green-50 rounded-lg transition text-left group shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-green-900 group-hover:text-green-700">Update Email</h4>
+                            <p class="text-xs text-gray-500 mt-1">Send verification link to email</p>
+                        </div>
+                        <span class="text-green-500 text-xl font-bold">&rarr;</span>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center px-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg">Update Mobile Number</h3>
+                <button onclick="closeModal('mobileModal')" class="text-blue-200 hover:text-white font-bold">&times;</button>
+            </div>
+            
+            <div class="p-6">
+                <div id="mobileStatus" class="hidden mb-4 p-3 rounded text-sm font-bold text-center"></div>
+
+                <div id="mobileStep1">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">New Mobile Number</label>
+                    <input type="text" id="newMobileInput" placeholder="Enter 10-digit number" class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-4 outline-none focus:border-blue-500">
+                    
+                    <button onclick="requestMobileOtp()" id="btnMobileOtp" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+                        Send OTP
+                    </button>
+                </div>
+
+                <div id="mobileStep2" class="hidden">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Enter 6-Digit OTP</label>
+                    <input type="text" id="mobileOtpInput" placeholder="******" maxlength="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-4 text-center text-2xl tracking-[0.5em] font-mono outline-none focus:border-blue-500">
+                    
+                    <button onclick="verifyMobileOtp()" id="btnMobileVerify" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition">
+                        Verify & Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="emailModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center px-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div class="bg-green-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg">Update Email Address</h3>
+                <button onclick="closeModal('emailModal')" class="text-green-200 hover:text-white font-bold">&times;</button>
+            </div>
+            
+            <div class="p-6">
+                <div id="emailStatus" class="hidden mb-4 p-3 rounded text-sm font-bold text-center"></div>
+
+                <p class="text-sm text-gray-600 mb-4">A verification link will be sent to the email address you provide below.</p>
+
+                <label class="block text-sm font-bold text-gray-700 mb-2">New Email Address</label>
+                <input type="email" id="newEmailInput" placeholder="e.g. user@example.com" class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-4 outline-none focus:border-green-500">
+                
+                <button onclick="requestEmailLink()" id="btnEmailLink" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition">
+                    Send Verification Link
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    const gatewayToken = sessionStorage.getItem('gatewayAccessToken');
+    let updateTxnId = ""; // Stores txnId for mobile OTP verification
+
+    // --- Profile Loading Logic ---
+    document.addEventListener("DOMContentLoaded", function () {
+        const storedData = sessionStorage.getItem('dashboardData');
+        
+        console.log("DEBUG - Raw Stored Data:", storedData);
+
+        if (!storedData) {
+            document.getElementById('user-name').innerText = "No Data Found";
+            return;
+        }
+
+        try {
+            const parsedData = JSON.parse(storedData);
+            
+            function findProfile(obj) {
+                if (!obj) return null;
+                
+                if ((obj.name || obj.firstName) && (obj.ABHANumber || obj.abhaNumber || obj.preferredAbhaAddress || obj.abhaAddress)) {
+                    return obj;
+                }
+                
+                if (obj.account) {
+                    let found = findProfile(obj.account);
+                    if (found) return found;
+                }
+                if (obj.accounts && Array.isArray(obj.accounts)) {
+                    for (let item of obj.accounts) {
+                        let found = findProfile(item);
+                        if (found) return found;
+                    }
+                }
+                if (obj.ABHA && Array.isArray(obj.ABHA)) {
+                    for (let item of obj.ABHA) {
+                        let found = findProfile(item);
+                        if (found) return found;
+                    }
+                }
+                
+                if (Array.isArray(obj)) {
+                    for (let item of obj) {
+                        let found = findProfile(item);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            const account = findProfile(parsedData);
+            console.log("DEBUG - Successfully Extracted Account:", account);
+
+            if (account) {
+                document.getElementById('user-name').innerText = account.name || account.firstName || "Unknown User";
+                document.getElementById('user-abha').innerText = account.ABHANumber || account.abhaNumber || "N/A";
+                document.getElementById('user-address').innerText = account.preferredAbhaAddress || account.abhaAddress || "N/A";
+                
+                const statusEl = document.getElementById('user-status');
+                const accStatus = account.status || "ACTIVE"; 
+                statusEl.innerText = accStatus;
+                
+                if (accStatus.toUpperCase() === "ACTIVE") {
+                    statusEl.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-green-100 text-green-800 border border-green-200";
+                }
+
+                if (account.profilePhoto && account.profilePhoto.trim() !== "") {
+                    document.getElementById('user-photo').src = "data:image/jpeg;base64," + account.profilePhoto;
+                }
+            } else {
+                document.getElementById('user-name').innerText = "Profile Data Missing";
+                console.warn("Could not find profile details inside the saved data.");
+            }
+        } catch (error) {
+            console.error("Error parsing dashboard data:", error);
+            document.getElementById('user-name').innerText = "Error Loading Profile";
+        }
+    });
+
+    function logout() {
+        sessionStorage.clear();
+        alert("Logged out successfully");
+        window.location.href = "/api5/v1/";
+    }
+
+    // --- Modal Utilities ---
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+        if(modalId === 'mobileModal') {
+            document.getElementById('mobileStep1').classList.remove('hidden');
+            document.getElementById('mobileStep2').classList.add('hidden');
+            document.getElementById('mobileStatus').classList.add('hidden');
+            document.getElementById('newMobileInput').value = "";
+            document.getElementById('mobileOtpInput').value = "";
+        } else {
+            document.getElementById('emailStatus').classList.add('hidden');
+            document.getElementById('newEmailInput').value = "";
+        }
+    }
+
+    function showModalMsg(boxId, msg, isError=false) {
+        const box = document.getElementById(boxId);
+        box.classList.remove('hidden');
+        box.innerText = msg;
+        box.className = isError 
+            ? `${boxId === 'mobileStatus' ? 'mb-4' : 'mb-4'} p-3 rounded text-sm font-bold text-center bg-red-100 text-red-700 border border-red-300` 
+            : `${boxId === 'mobileStatus' ? 'mb-4' : 'mb-4'} p-3 rounded text-sm font-bold text-center bg-green-100 text-green-700 border border-green-300`;
+    }
+
+    // --- Error Formatting Utility ---
+    function extractErrorMessage(errData) {
+        if (!errData) return "An unknown error occurred.";
+        
+        if (typeof errData === 'string') {
+            try {
+                const parsed = JSON.parse(errData);
+                return extractErrorMessage(parsed); 
+            } catch (e) {
+                return errData.replace(/\\"/g, '"').replace(/^"|"$/g, '');
+            }
+        }
+
+        if (typeof errData === 'object') {
+            if (errData.message) return errData.message;
+            if (errData.error) return errData.error;
+            if (errData.details) return errData.details;
+            
+            const keys = Object.keys(errData);
+            if (keys.length > 0) {
+                const firstKeyVal = errData[keys];
+                if (Array.isArray(firstKeyVal)) return firstKeyVal; 
+                if (typeof firstKeyVal === 'string') return firstKeyVal;
+            }
+        }
+
+        return "Request failed. Please try again.";
+    }
+
+    // --- UPDATE MOBILE LOGIC ---
+    async function requestMobileOtp() {
+        const mobile = document.getElementById("newMobileInput").value.trim();
+        const btn = document.getElementById("btnMobileOtp");
+
+        if (!/^[0-9]{10}$/.test(mobile)) {
+            showModalMsg('mobileStatus', "Enter a valid 10-digit mobile number.", true);
+            return;
+        }
+
+        btn.innerText = "Requesting...";
+        btn.disabled = true;
+
+        const payload = {
+            "action": "update-mobile",
+            "loginHint": "mobile", 
+            "loginId": mobile,
+            "otpSystem": "abdm"
+        };
+
+        try {
+            const response = await fetch('/api8/v1/profile/account/request/otp/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                updateTxnId = data.txnId;
+                document.getElementById('mobileStep1').classList.add('hidden');
+                document.getElementById('mobileStep2').classList.remove('hidden');
+                showModalMsg('mobileStatus', "OTP sent successfully!");
+            } else {
+                showModalMsg('mobileStatus', extractErrorMessage(data), true);
+            }
+        } catch (err) {
+            showModalMsg('mobileStatus', "Server error.", true);
+        } finally {
+            btn.innerText = "Send OTP";
+            btn.disabled = false;
+        }
+    }
+
+    async function verifyMobileOtp() {
+        const otp = document.getElementById("mobileOtpInput").value.trim();
+        const btn = document.getElementById("btnMobileVerify");
+
+        if (otp.length < 6) {
+            showModalMsg('mobileStatus', "Enter a 6-digit OTP.", true);
+            return;
+        }
+
+        btn.innerText = "Verifying...";
+        btn.disabled = true;
+
+        const payload = {
+            "action": "update-mobile", 
+            "txnId": updateTxnId,
+            "authMethod": "otp",       
+            "authValue": otp,          
+            "otpSystem": "abdm"
+        };
+        try {
+            const response = await fetch('/api8/v1/profile/account/verify/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                showModalMsg('mobileStatus', "Mobile number updated successfully!");
+                document.getElementById('mobileStep2').classList.add('hidden');
+                setTimeout(() => closeModal('mobileModal'), 2000);
+            } else {
+                showModalMsg('mobileStatus', extractErrorMessage(data), true);
+            }
+        } catch (err) {
+            showModalMsg('mobileStatus', "Server error.", true);
+        } finally {
+            btn.innerText = "Verify & Update";
+            btn.disabled = false;
+        }
+    }
+
+    // --- UPDATE EMAIL LOGIC ---
+    async function requestEmailLink() {
+        const email = document.getElementById("newEmailInput").value.trim();
+        const btn = document.getElementById("btnEmailLink");
+        
+        const currentTxnId = sessionStorage.getItem("loginTxnId");
+
+        if (!email.includes("@")) {
+            showModalMsg('emailStatus', "Enter a valid email address.", true);
+            return;
+        }
+        
+        if (!currentTxnId) {
+            showModalMsg('emailStatus', "Session expired. Please log out and log in again.", true);
+            return;
+        }
+
+        btn.innerText = "Sending...";
+        btn.disabled = true;
+
+        const payload = {
+            "loginId": email, 
+            "txnId": currentTxnId 
+        };
+
+        try {
+            const response = await fetch('/api8/v1/profile/account/request/emailVerificationLink/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                showModalMsg('emailStatus', "Verification link sent! Check your inbox.");
+                setTimeout(() => closeModal('emailModal'), 3000);
+            } else {
+                showModalMsg('emailStatus', extractErrorMessage(data), true);
+            }
+        } catch (err) {
+            showModalMsg('emailStatus', "Server error.", true);
+        } finally {
+            btn.innerText = "Send Verification Link";
+            btn.disabled = false;
+        }
+    }
+    </script>
+</body>
+</html>
