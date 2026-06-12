@@ -6,7 +6,7 @@
 
 <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-auto overflow-hidden border border-gray-200 mt-10">
 
-```
+
 <div class="bg-blue-50 border-b border-blue-100 p-6 flex justify-between items-center">
     <div>
         <h2 class="text-2xl font-extrabold text-blue-900">ABHA Search</h2>
@@ -117,16 +117,47 @@ let otpSystem = "";
 const gatewayToken =
     sessionStorage.getItem("gatewayAccessToken");
 
-function showMessage(msg, error=false){
+function showMessage(msg, error = false) {
 
     const box = document.getElementById("statusBox");
 
     box.style.display = "block";
-    box.innerHTML = msg;
+
+    let displayMessage = msg;
+
+    try {
+
+        // If msg is a JSON string, convert it
+        if (typeof msg === "string" && msg.startsWith("{")) {
+
+            const parsed = JSON.parse(msg);
+
+            if (parsed.error) {
+                displayMessage = parsed.error.message;
+            } else if (parsed.message) {
+                displayMessage = parsed.message;
+            }
+        }
+
+        // If msg is already an object
+        else if (typeof msg === "object" && msg !== null) {
+
+            if (msg.error) {
+                displayMessage = msg.error.message;
+            } else if (msg.message) {
+                displayMessage = msg.message;
+            }
+        }
+
+    } catch (e) {
+        console.log("Message parsing failed:", e);
+    }
+
+    box.textContent = displayMessage;
 
     box.className = error
-        ? "mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-100 text-red-700"
-        : "mb-6 p-4 rounded-lg text-sm font-bold text-center bg-green-100 text-green-700";
+        ? "mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-100 text-red-700 border border-red-300"
+        : "mb-6 p-4 rounded-lg text-sm font-bold text-center bg-green-100 text-green-700 border border-green-300";
 }
 
 function updateProgress(step){
@@ -195,7 +226,7 @@ async function searchAbha(){
             updateProgress(2);
 
         }else{
-            showMessage(JSON.stringify(data), true);
+            showMessage(data, true);
         }
 
     }catch(err){
@@ -266,7 +297,7 @@ async function requestOtp(){
             updateProgress(3);
 
         }else{
-            showMessage(JSON.stringify(data), true);
+            showMessage(data, true);
         }
 
     }catch(err){
@@ -315,7 +346,7 @@ async function verifyOtp(){
             showMessage("ABHA Found Successfully");
 
         }else{
-            showMessage(JSON.stringify(data), true);
+            showMessage(data, true);
         }
 
     }catch(err){

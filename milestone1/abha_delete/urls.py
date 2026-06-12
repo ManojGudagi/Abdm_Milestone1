@@ -9,4 +9,6 @@ from .views.delete_view import (
 urlpatterns = [
     path('delete/generate-otp/', GenerateDeleteOtpView.as_view(), name='delete-generate-otp'),
     path('delete/verify-otp/', VerifyDeleteOtpView.as_view(), name='delete-verify-otp'),
+
+    
 ]

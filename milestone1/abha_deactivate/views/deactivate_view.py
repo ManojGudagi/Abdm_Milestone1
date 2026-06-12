@@ -30,17 +30,25 @@ class GenerateDeactivateOtpView(APIView):
         responses={200: "OTP Sent"}
     )
     def post(self, request):
-        # HYBRID CHECK
         x_token = request.headers.get("X-Token") or get_user_x_token()
+        
+        # 👇 CRITICAL FIX: Catch the gateway token your frontend sent!
+        gateway_token = request.headers.get("Authorization")
+
         if not x_token:
             return Response({"error": "X-Token missing. Paste it in the Header or run login again."}, status=401)
+            
+        if not gateway_token:
+            return Response({"error": "Gateway Token missing."}, status=401)
 
         serializer = GenerateDeactivateOtpSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
             
         plaintext_abha = serializer.validated_data["ABHANumber"]
-        response_data, status_code = generate_deactivate_otp_service(plaintext_abha, x_token)
+        
+        # 👇 Pass BOTH tokens to the service
+        response_data, status_code = generate_deactivate_otp_service(plaintext_abha, x_token, gateway_token)
 
         return Response(response_data, status=status_code)
 
@@ -53,10 +61,16 @@ class VerifyDeactivateOtpView(APIView):
         responses={200: "Account Deactivated"}
     )
     def post(self, request):
-        # HYBRID CHECK
         x_token = request.headers.get("X-Token") or get_user_x_token()
+        
+        # 👇 CRITICAL FIX: Catch the gateway token here too!
+        gateway_token = request.headers.get("Authorization")
+
         if not x_token:
             return Response({"error": "X-Token missing. Paste it in the Header or run login again."}, status=401)
+            
+        if not gateway_token:
+            return Response({"error": "Gateway Token missing."}, status=401)
 
         serializer = VerifyDeactivateOtpSerializer(data=request.data)
         if not serializer.is_valid():
@@ -64,9 +78,9 @@ class VerifyDeactivateOtpView(APIView):
 
         txn_id = serializer.validated_data["txnId"]
         plaintext_otp = serializer.validated_data["otpValue"]
-        reasons = serializer.validated_data["reasons"] # ✅ Extract reasons
+        reasons = serializer.validated_data["reasons"] 
 
-        # Pass all data to the service
-        response_data, status_code = verify_deactivate_otp_service(txn_id, plaintext_otp, reasons, x_token)
+        # 👇 Pass the reasons AND both tokens to the service
+        response_data, status_code = verify_deactivate_otp_service(txn_id, plaintext_otp, reasons, x_token, gateway_token)
 
         return Response(response_data, status=status_code)

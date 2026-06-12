@@ -8,7 +8,7 @@ from ..utils import (
     get_abdm_access_token 
 )
 
-def generate_deactivate_otp_service(plaintext_abha: str, x_token: str) -> tuple[dict, int]:
+def generate_deactivate_otp_service(plaintext_abha: str, x_token: str, gateway_token: str) -> tuple[dict, int]:
     url = "https://abhasbx.abdm.gov.in/abha/api/v3/profile/account/request/otp"
     
     try:
@@ -43,7 +43,7 @@ def generate_deactivate_otp_service(plaintext_abha: str, x_token: str) -> tuple[
         return {"error": "Failed to connect to ABDM", "details": str(e)}, 503
 
 
-def verify_deactivate_otp_service(txn_id: str, plaintext_otp: str, reasons: list, x_token: str) -> tuple[dict, int]:
+def verify_deactivate_otp_service(txn_id: str, plaintext_otp: str, reasons: str, x_token: str, gateway_token: str) -> tuple[dict, int]:
     url = "https://abhasbx.abdm.gov.in/abha/api/v3/profile/account/verify"
     
     try:

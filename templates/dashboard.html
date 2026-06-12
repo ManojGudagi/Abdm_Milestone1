@@ -63,6 +63,14 @@
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
+                    <button onclick="openModal('abhaModal')" class="flex items-center justify-between p-4 border border-purple-200 bg-white hover:bg-purple-50 rounded-lg transition text-left group shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-purple-900 group-hover:text-purple-700">Create ABHA Address</h4>
+                            <p class="text-xs text-gray-500 mt-1">Set a custom ABHA address</p>
+                        </div>
+                        <span class="text-purple-500 text-xl font-bold">&rarr;</span>
+                    </button>
+
                     <button onclick="openModal('mobileModal')" class="flex items-center justify-between p-4 border border-blue-200 bg-white hover:bg-blue-50 rounded-lg transition text-left group shadow-sm">
                         <div>
                             <h4 class="font-bold text-blue-900 group-hover:text-blue-700">Update Mobile</h4>
@@ -79,7 +87,53 @@
                         <span class="text-green-500 text-xl font-bold">&rarr;</span>
                     </button>
 
+                    <!-- Deactivate Account Button -->
+                    <button onclick="window.location.href='/portal/deactivate/'" class="flex items-center justify-between p-4 border border-orange-200 bg-white hover:bg-orange-50 rounded-lg transition text-left group shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-orange-900 group-hover:text-orange-700">Deactivate Account</h4>
+                            <p class="text-xs text-gray-500 mt-1">Temporarily disable your account</p>
+                        </div>
+                        <span class="text-orange-500 text-xl font-bold">&rarr;</span>
+                    </button>
+
+                    <!-- UPDATED: Delete Account Button (Redirects to your new delete.html) -->
+                    <button onclick="window.location.href='/portal/delete/'" class="flex items-center justify-between p-4 border border-red-200 bg-white hover:bg-red-50 rounded-lg transition text-left group shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-red-900 group-hover:text-red-700">Delete Account</h4>
+                            <p class="text-xs text-gray-500 mt-1">Permanently remove your ABHA</p>
+                        </div>
+                        <span class="text-red-500 text-xl font-bold">&rarr;</span>
+                    </button>
+
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="abhaModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center px-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div class="bg-purple-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg">Create Custom ABHA Address</h3>
+                <button onclick="closeModal('abhaModal')" class="text-purple-200 hover:text-white font-bold">&times;</button>
+            </div>
+            
+            <div class="p-6">
+                <div id="abhaStatus" class="hidden mb-4 p-3 rounded text-sm font-bold text-center"></div>
+
+                <label class="block text-sm font-bold text-gray-700 mb-2">Desired ABHA Address</label>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="newAbhaInput" placeholder="e.g. name_123" class="w-full px-4 py-3 rounded-lg border border-gray-300 outline-none focus:border-purple-500">
+                    <span class="inline-flex items-center px-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 font-bold">@abdm</span>
+                </div>
+
+                <button onclick="fetchAbhaSuggestions()" id="btnGetSuggestions" class="text-sm font-bold text-purple-600 hover:text-purple-800 mb-2 underline transition">
+                    Need Ideas? Get Suggestions
+                </button>
+                <div id="suggestionsList" class="flex flex-wrap gap-2 mb-4 empty:hidden"></div>
+
+                <button onclick="submitAbhaCreation()" id="btnCreateAbha" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition mt-2">
+                    Create ABHA
+                </button>
             </div>
         </div>
     </div>
@@ -237,9 +291,13 @@
             document.getElementById('mobileStatus').classList.add('hidden');
             document.getElementById('newMobileInput').value = "";
             document.getElementById('mobileOtpInput').value = "";
-        } else {
+        } else if (modalId === 'emailModal') {
             document.getElementById('emailStatus').classList.add('hidden');
             document.getElementById('newEmailInput').value = "";
+        } else if (modalId === 'abhaModal') {
+            document.getElementById('abhaStatus').classList.add('hidden');
+            document.getElementById('newAbhaInput').value = "";
+            document.getElementById('suggestionsList').innerHTML = ""; 
         }
     }
 
@@ -280,6 +338,102 @@
 
         return "Request failed. Please try again.";
     }
+
+    // --- CREATE ABHA LOGIC ---
+    async function fetchAbhaSuggestions() {
+        const btn = document.getElementById("btnGetSuggestions");
+        const container = document.getElementById("suggestionsList");
+        const currentTxnId = sessionStorage.getItem("loginTxnId");
+
+        if (!currentTxnId) {
+            showModalMsg('abhaStatus', "Transaction ID missing. Please login again.", true);
+            return;
+        }
+
+        btn.innerText = "Loading...";
+        container.innerHTML = "";
+
+        try {
+            const response = await fetch(`/api2/v1/abha/suggestions/?txnId=${currentTxnId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + gatewayToken
+                }
+            });
+            const data = await response.json();
+
+            if (response.ok && data.abhaAddresses) { 
+                const suggestions = data.abhaAddresses || data; 
+                
+                suggestions.forEach(suggestion => {
+                    const badge = document.createElement("button");
+                    badge.className = "px-3 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded-full border border-purple-200 hover:bg-purple-200 transition";
+                    badge.innerText = suggestion;
+                    badge.onclick = () => {
+                        document.getElementById("newAbhaInput").value = suggestion;
+                    };
+                    container.appendChild(badge);
+                });
+            } else {
+                showModalMsg('abhaStatus', extractErrorMessage(data) || "No suggestions found.", true);
+            }
+        } catch (err) {
+            showModalMsg('abhaStatus', "Server error fetching suggestions.", true);
+        } finally {
+            btn.innerText = "Need Ideas? Get Suggestions";
+        }
+    }
+
+    async function submitAbhaCreation() {
+        const abhaAddress = document.getElementById("newAbhaInput").value.trim();
+        const btn = document.getElementById("btnCreateAbha");
+        const currentTxnId = sessionStorage.getItem("loginTxnId");
+
+        if (!abhaAddress) {
+            showModalMsg('abhaStatus', "Please enter a desired ABHA address.", true);
+            return;
+        }
+        
+        if (!currentTxnId) {
+            showModalMsg('abhaStatus', "Session expired. Please log out and log in again.", true);
+            return;
+        }
+
+        btn.innerText = "Creating...";
+        btn.disabled = true;
+
+        const payload = {
+            "txnId": currentTxnId,
+            "abhaAddress": abhaAddress
+        };
+
+        try {
+            const response = await fetch('/api2/v1/abha/create-address/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                showModalMsg('abhaStatus', "ABHA Address Created Successfully!");
+                // Optionally update the dashboard UI with the new address here
+                document.getElementById('user-address').innerText = abhaAddress;
+                setTimeout(() => closeModal('abhaModal'), 2500);
+            } else {
+                showModalMsg('abhaStatus', extractErrorMessage(data), true);
+            }
+        } catch (err) {
+            showModalMsg('abhaStatus', "Server error.", true);
+        } finally {
+            btn.innerText = "Create ABHA";
+            btn.disabled = false;
+        }
+    }
+
 
     // --- UPDATE MOBILE LOGIC ---
     async function requestMobileOtp() {

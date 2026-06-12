@@ -25,6 +25,10 @@ urlpatterns = [
     
     path('portal/milestone3/', TemplateView.as_view(template_name='milestone3.html'), name='m3-portal'),
 
+    path('portal/delete/', TemplateView.as_view(template_name='delete.html'), name='delete-portal'),
+
+    path('portal/deactivate/', TemplateView.as_view(template_name='deactivate.html'), name='deactivate-portal'),
+
     path('admin/', admin.site.urls),
 
     path('aadhaar/', include('milestone1.enrollment_aadhaar.urls')),

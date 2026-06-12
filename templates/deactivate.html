@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deactivate ABHA Account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4 sm:p-8">
+
+    <div class="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        
+        <div class="bg-orange-600 px-6 py-4 flex justify-between items-center">
+            <h1 class="text-white text-xl font-bold flex items-center">
+                <span class="mr-2">⏸️</span> Deactivate Account
+            </h1>
+
+            <button onclick="window.location.href='/api5/v1/portal/dashboard/'" class="text-orange-100 hover:text-white text-sm font-bold transition">
+                &larr; Back
+            </button>
+            
+        </div>
+
+        <div class="p-6 sm:p-8">
+            <div id="deactivateStatus" class="hidden mb-6 p-4 rounded-lg text-sm font-bold text-center"></div>
+
+            <div id="deactivateStep1">
+                <h2 class="text-lg font-bold text-gray-900 mb-2">Temporary Deactivation</h2>
+                <p class="text-sm text-gray-600 mb-6">Deactivating your account will temporarily disable it. You can reactivate it later. Enter your ABHA number to receive an OTP.</p>
+                
+                <label class="block text-sm font-bold text-gray-700 mb-2">ABHA Number</label>
+                <input type="text" id="deactivateAbhaInput" placeholder="e.g. 91-XXXX-XXXX-XXXX" class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-6 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition">
+                
+                <button onclick="requestDeactivateOtp()" id="btnDeactivateOtp" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg shadow-md transition">
+                    Send Deactivation OTP
+                </button>
+            </div>
+
+            <div id="deactivateStep2" class="hidden">
+                <h2 class="text-lg font-bold text-gray-900 mb-2">Verify Deactivation</h2>
+                <p class="text-sm text-gray-600 mb-6">An OTP has been sent to your Aadhaar-linked mobile number.</p>
+                
+                <label class="block text-sm font-bold text-gray-700 mb-2">Enter 6-Digit OTP</label>
+                <input type="text" id="deactivateOtpInput" placeholder="******" maxlength="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-6 text-center text-3xl tracking-[0.5em] font-mono outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition">
+                
+                <button onclick="verifyDeactivateOtp()" id="btnDeactivateVerify" class="w-full bg-orange-800 hover:bg-orange-900 text-white font-bold py-3 rounded-lg shadow-md transition">
+                    Confirm & Deactivate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const gatewayToken = sessionStorage.getItem('gatewayAccessToken');
+    let deactivateTxnId = ""; 
+
+    function showStatus(msg, isError = false) {
+        const box = document.getElementById('deactivateStatus');
+        box.classList.remove('hidden');
+        box.innerText = msg;
+        box.className = isError 
+            ? `mb-6 p-4 rounded-lg text-sm font-bold text-center bg-red-50 text-red-700 border border-red-200` 
+            : `mb-6 p-4 rounded-lg text-sm font-bold text-center bg-green-50 text-green-700 border border-green-200`;
+    }
+
+    function extractErrorMessage(errData) {
+        if (!errData) return "An unknown error occurred.";
+        if (typeof errData === 'string') {
+            try { return extractErrorMessage(JSON.parse(errData)); } 
+            catch (e) { return errData.replace(/\\"/g, '"').replace(/^"|"$/g, ''); }
+        }
+        if (typeof errData === 'object') {
+            if (errData.message) return errData.message;
+            if (errData.error) return errData.error;
+            if (errData.details) return errData.details;
+            const keys = Object.keys(errData);
+            if (keys.length > 0) return Array.isArray(errData[keys]) ? errData[keys] : errData[keys];
+        }
+        return "Request failed. Please try again.";
+    }
+
+    async function requestDeactivateOtp() {
+        const abhaInput = document.getElementById("deactivateAbhaInput").value.trim();
+        const btn = document.getElementById("btnDeactivateOtp");
+        const xToken = sessionStorage.getItem('abhaProfileToken'); 
+
+        if (!abhaInput) {
+            showStatus("Please enter your ABHA number.", true);
+            return;
+        }
+
+        if (!xToken) {
+            showStatus("Session token missing. Please log out and log in again.", true);
+            return;
+        }
+
+        btn.innerText = "Requesting...";
+        btn.disabled = true;
+
+        try {
+            // Adjust this URL if your deactivation generation endpoint is named differently
+            const response = await fetch('/api11/v1/deactivate/generate-otp/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken,
+                    'X-Token': xToken 
+                },
+                body: JSON.stringify({ "ABHANumber": abhaInput })
+            });
+            const data = await response.json();
+
+            if (response.ok && data.txnId) {
+                deactivateTxnId = data.txnId;
+                document.getElementById('deactivateStep1').classList.add('hidden');
+                document.getElementById('deactivateStep2').classList.remove('hidden');
+                showStatus("OTP sent successfully!");
+            } else {
+                showStatus(extractErrorMessage(data), true);
+            }
+        } catch (err) {
+            showStatus("Server error. Could not connect to backend.", true);
+        } finally {
+            btn.innerText = "Send Deactivation OTP";
+            btn.disabled = false;
+        }
+    }
+
+    async function verifyDeactivateOtp() {
+        const otp = document.getElementById("deactivateOtpInput").value.trim();
+        const btn = document.getElementById("btnDeactivateVerify");
+        const xToken = sessionStorage.getItem('abhaProfileToken');
+
+        if (otp.length < 6) {
+            showStatus("Enter a valid 6-digit OTP.", true);
+            return;
+        }
+
+        btn.innerText = "Deactivating...";
+        btn.disabled = true;
+
+        try {
+            // Adjust this URL if your deactivation verification endpoint is named differently
+            const response = await fetch('/api11/v1/deactivate/verify-otp/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + gatewayToken,
+                    'X-Token': xToken 
+                },
+                body: JSON.stringify({ "txnId": deactivateTxnId, "otpValue": otp })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                showStatus("Account successfully deactivated. Logging out...");
+                document.getElementById('deactivateStep2').classList.add('hidden');
+                
+                // Clear session and redirect to login/home
+                setTimeout(() => {
+                    sessionStorage.clear();
+                    window.location.href = '/api5/v1/'; 
+                }, 3000);
+            } else {
+                showStatus(extractErrorMessage(data), true);
+            }
+        } catch (err) {
+            showStatus("Server error during verification.", true);
+        } finally {
+            btn.innerText = "Confirm & Deactivate";
+            btn.disabled = false;
+        }
+    }
+    </script>
+</body>
+</html>
